@@ -38,8 +38,8 @@ public class WxPortalController {
                           @RequestParam(name = "nonce", required = false) String nonce,
                           @RequestParam(name = "echostr", required = false) String echostr) {
 
-        log.info("\n接收到来自微信服务器的认证消息：[{}, {}, {}, {}]", signature,
-            timestamp, nonce, echostr);
+        /*log.info("\n接收到来自微信服务器的认证消息：[{}, {}, {}, {}]", signature,
+            timestamp, nonce, echostr);*/
         if (StringUtils.isAnyBlank(signature, timestamp, nonce, echostr)) {
             throw new IllegalArgumentException("请求参数非法，请核实!");
         }
@@ -64,10 +64,10 @@ public class WxPortalController {
                        @RequestParam("openid") String openid,
                        @RequestParam(name = "encrypt_type", required = false) String encType,
                        @RequestParam(name = "msg_signature", required = false) String msgSignature) {
-        log.info("\n接收微信请求：[openid=[{}], [signature=[{}], encType=[{}], msgSignature=[{}],"
+        /*log.info("\n接收微信请求：[openid=[{}], [signature=[{}], encType=[{}], msgSignature=[{}],"
                 + " timestamp=[{}], nonce=[{}], requestBody=[\n{}\n] ",
             openid, signature, encType, msgSignature, timestamp, nonce, requestBody);
-
+        */
         if (!this.wxService.switchover(appid)) {
             throw new IllegalArgumentException(String.format("未找到对应appid=[%s]的配置，请核实！", appid));
         }
@@ -99,7 +99,7 @@ public class WxPortalController {
             out = outMessage.toEncryptedXml(wxService.getWxMpConfigStorage());
         }
 
-        log.debug("\n组装回复信息：{}", out);
+        //log.debug("\n组装回复信息：{}", out);
         return out;
     }
 

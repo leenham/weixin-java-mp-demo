@@ -1,9 +1,16 @@
 package com.github.binarywang.demo.wx.mp.controller;
 
+import com.github.binarywang.demo.wx.mp.Service.LanternService;
+import com.github.binarywang.demo.wx.mp.object.LanternEvent;
+import com.thoughtworks.xstream.XStream;
 import io.restassured.RestAssured;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.testng.annotations.BeforeTest;
 
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

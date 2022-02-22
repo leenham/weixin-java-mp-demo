@@ -2,6 +2,7 @@ package com.github.binarywang.demo.wx.mp.handler;
 
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.github.binarywang.demo.wx.mp.builder.TextBuilder;
@@ -14,6 +15,7 @@ import me.chanjar.weixin.mp.bean.result.WxMpUser;
 
 /**
  * @author Binary Wang(https://github.com/binarywang)
+ * 当有用户关注时响应的handler
  */
 @Component
 public class SubscribeHandler extends AbstractHandler {
