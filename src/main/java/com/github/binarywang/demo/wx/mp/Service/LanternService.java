@@ -4,6 +4,8 @@ import com.github.binarywang.demo.wx.mp.builder.TextBuilder;
 import com.github.binarywang.demo.wx.mp.object.LanternEvent;
 import com.github.binarywang.demo.wx.mp.utils.LanternUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -16,27 +18,31 @@ import java.util.List;
 @Slf4j
 @Component
 public class LanternService {
-    public String retrieval(String keyword){
-                List<String> eventlist = LanternUtils.getEventList();
-                List<LanternEvent> selected = new ArrayList<>();
-                for(int i=0;i<eventlist.size();i++){
-                    String eventstr = eventlist.get(i);
-                    if(eventstr.contains(keyword)){
-                        selected.add(LanternUtils.toLanternEvent(eventstr));
-                    }
-                }
-                if(selected.size()>=10 || selected.size()<=0) {
-                    String content = "";
-                    if(selected.size()<=0){
-                        if(keyword.length()>=5){
-                            content = "请尝试用更短的词语进行检索~\n";
-                        }else{
-                            content = "请尝试更换关键词!或协助完善题库~\n";
-                        }
-                    }else {
-                        content = "检索到的条目过多,请尝试更换关键词!\n";
-                    }
+    @Value(value="${link.jump.yingxiongsha}")
+    public String jumplink;
 
+    //返回结果超过这个值,会导致响应过慢,而无法响应.已知7条时会不予响应.
+    public int MAX_RETURN_RESULT = 6;
+    public String retrieval(String keyword){
+        List<String> eventlist = LanternUtils.getEventList();
+        List<LanternEvent> selected = new ArrayList<>();
+        for(int i=0;i<eventlist.size();i++){
+            String eventstr = eventlist.get(i);
+            if(eventstr.contains(keyword)){
+                selected.add(LanternUtils.toLanternEvent(eventstr));
+            }
+        }
+        if(selected.size()>=6 || selected.size()<=0) {
+            String content = "";
+            if(selected.size()<=0){
+                if(keyword.length()>=5){
+                    content = "请尝试用更短的词语进行检索~\n";
+                }else{
+                    content = "请尝试更换关键词!或协助完善题库~\n";
+                }
+            }else {
+                content = "检索到的条目过多,请尝试更换关键词!\n";
+            }
             return content;
         }
         StringBuffer sb = new StringBuffer();
@@ -49,6 +55,7 @@ public class LanternService {
             }
             sb.append("\n");
         }
+        sb.append(jumplink);
         return sb.toString();
     }
     public String getEventByIdx(int idx){
