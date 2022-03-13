@@ -221,4 +221,8 @@ public class LanternTest {
 
     }
 
+    @Test
+    public void myTest(){
+        System.out.println("Hello,world!\n");
+    }
 }
