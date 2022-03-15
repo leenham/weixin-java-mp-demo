@@ -17,6 +17,7 @@ import me.chanjar.weixin.mp.bean.message.WxMpXmlOutMessage;
 import org.apache.commons.lang3.StringUtils;
 import org.omg.CosNaming.NamingContextExtPackage.StringNameHelper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -33,6 +34,9 @@ public class MsgHandler extends AbstractHandler {
     @Autowired
     LanternService lanternService;
 
+    @Autowired
+    RedisTemplate redisTemplate;
+
     @Override
     public WxMpXmlOutMessage handle(WxMpXmlMessage wxMessage,
                                     Map<String, Object> context, WxMpService weixinService,
@@ -43,9 +47,11 @@ public class MsgHandler extends AbstractHandler {
         }
 
         String keyword = wxMessage.getContent();
-        //String reply = lanternService.retrieval(keyword);
-        String reply = "copy that!\n";
-        System.out.println(wxMessage.getPicUrl());
+        String reply = lanternService.retrieval(keyword);
+        //int idx = 0;
+
+        //String reply = keyword+"copy that!\n";
+        //System.out.println(wxMessage.getPicUrl());
         return new TextBuilder().build(reply, wxMessage, weixinService);
     }
 
