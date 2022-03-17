@@ -219,7 +219,7 @@ public class LanternUtils {
             if(events[i].length()<5)//omit illegal fragment
                 continue;
             try{
-                LanternEvent event = JsonUtils.fromJson(events[i]);
+                LanternEvent event = (LanternEvent)JsonUtils.fromJson(events[i],LanternEvent.class);
                 eventList.add(events[i]);
             }catch (Exception e){
                 log.error("加载题库失败：%s",events[i]);
@@ -250,10 +250,10 @@ public class LanternUtils {
         return StringUtils.trimAllWhitespace(text);
     }
     public static Object toJsonObject(String s){
-        return JsonUtils.fromJson(s);
+        return JsonUtils.fromJson(s,Object.class);
     }
     public static LanternEvent toLanternEvent(String s){
-        return (LanternEvent)JsonUtils.fromJson(s);
+        return (LanternEvent)JsonUtils.fromJson(s,LanternEvent.class);
     }
 
 }
