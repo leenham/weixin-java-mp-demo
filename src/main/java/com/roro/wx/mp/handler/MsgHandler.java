@@ -101,7 +101,7 @@ public class MsgHandler extends AbstractHandler {
         String result = cipherService.retrieval(user,c);
         if(result==null || result.equals("")){
             //表示无法检索到暗号图
-            return "当前暗号池暂未收录该暗号图";
+            return "当前暗号池暂未收录该暗号图!";
         }else {
             return result;
         }
