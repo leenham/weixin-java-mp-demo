@@ -1,6 +1,9 @@
 package com.roro.wx.mp.utils;
 
+import com.roro.wx.mp.object.Cipher;
+
 import java.awt.image.BufferedImage;
+import java.util.HashMap;
 
 /**
  * 为了老是写重复的测试用的代码,将这些代码统统放这里,方便调用.
@@ -39,5 +42,10 @@ public class TestUtils {
             }
         }
         System.out.println(String.format("IMAGE:%d X %d",img1.getWidth(),img1.getHeight()));
+    }
+    public static void checkDatabase(HashMap<String,Cipher> map){
+        for(String key:map.keySet()){
+            System.out.println(String.format("%s:%s",key,map.get(key).getUrl()));
+        }
     }
 }

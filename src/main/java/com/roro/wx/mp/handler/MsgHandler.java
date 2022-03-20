@@ -61,9 +61,9 @@ public class MsgHandler extends AbstractHandler {
 
 
     private String handleText(WxMpXmlMessage wxMessage){
+        String keyword = wxMessage.getContent();
         //处理文本类的消息
         User user = userService.getUser(wxMessage.getToUser(),wxMessage.getFromUser());
-        String keyword = wxMessage.getContent();
         String result = cipherService.checkCipherAnswer(keyword);
         if(result==null || result.equals("")){
             //说明输入的不是暗号图的答案.当前不予以响应.

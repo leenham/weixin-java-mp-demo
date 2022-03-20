@@ -3,8 +3,6 @@ package com.roro.wx.mp.utils;
 import com.roro.wx.mp.enums.ErrorCodeEnum;
 import com.roro.wx.mp.enums.MpException;
 import lombok.Getter;
-import org.opencv.core.CvType;
-import org.opencv.core.Mat;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -97,17 +95,5 @@ public class ImageUtils {
     }
     public static BufferedImage truncate(BufferedImage img, int top,int right,int bottom,int left){
         return img.getSubimage(left,top,img.getWidth()-left-right,img.getHeight()-top-bottom);
-    }
-    public static Mat bufferToMartix(BufferedImage image) {
-        Mat mat = new Mat(image.getHeight(), image.getWidth(), CvType.CV_8UC3);
-        byte[] data = ((DataBufferByte) image.getRaster().getDataBuffer()).getData();
-        if (mat != null) {
-            try {
-                mat.put(0, 0, data);
-            } catch (Exception e) {
-                return null;
-            }
-        }
-        return mat;
     }
 }

@@ -185,5 +185,7 @@ public class CipherService {
             throw new MpException(ErrorCodeEnum.NO_COMMIT_CIPHER);
         }
     }
-
+    public HashMap<String,Cipher> getCipherTable(){
+        return this.cipherTable;
+    }
 }
