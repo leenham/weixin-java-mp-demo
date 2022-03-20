@@ -17,6 +17,7 @@ public enum ErrorCodeEnum {
     NO_RECENT_CIPHER(90010006,"距离上次提交暗号图过久,请重新上传暗号图"),
     CIPHER_RETRIVAL_ERROR(90010007,"检索暗号图时发生异常"),
     FAIL_UPDATE_CIPHER_POOL(90010008,"更新暗号池时发生异常"),
+    UNABLE_RESOLVE_CIPHER(90010009,"无法处理该暗号图"),
     CIPHER_UNKNOWN_ERROR(90010999, "处理暗号图时未知异常"),
 
     PLACE_HOLDER(99999999,"占位符");

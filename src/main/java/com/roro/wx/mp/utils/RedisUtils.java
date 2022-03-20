@@ -4,6 +4,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
+import java.util.Set;
+
 @Component
 public class RedisUtils {
     @Autowired
@@ -25,6 +27,9 @@ public class RedisUtils {
         return redisTemplate.opsForHash().get(key,hashkey);
     }
 
+    public Set<Object> hkeys(String key){
+        return redisTemplate.opsForHash().keys(key);
+    }
     public boolean hexists(String key,Object hashkey){
         return redisTemplate.opsForHash().hasKey(key,hashkey);
     }

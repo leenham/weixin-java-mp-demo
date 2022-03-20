@@ -51,7 +51,7 @@ public class MsgHandler extends AbstractHandler {
                 reply = handleImage(wxMessage);
             }
         }catch(MpException e){
-            return new TextBuilder().build(e.getErrorMsg(), wxMessage, weixinService);
+            return new TextBuilder().build(e.getErrorCode()+e.getErrorMsg(), wxMessage, weixinService);
         }
         if(reply.equals("")){
             return null;
@@ -64,7 +64,7 @@ public class MsgHandler extends AbstractHandler {
         //处理文本类的消息
         User user = userService.getUser(wxMessage.getToUser(),wxMessage.getFromUser());
         String keyword = wxMessage.getContent();
-        String result = cipherService.handleCipherAnswer(keyword);
+        String result = cipherService.checkCipherAnswer(keyword);
         if(result==null || result.equals("")){
             //说明输入的不是暗号图的答案.当前不予以响应.
             return "";

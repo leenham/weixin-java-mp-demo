@@ -4,15 +4,23 @@ package com.roro.wx.mp;
 import com.alibaba.fastjson.JSON;
 import com.roro.wx.mp.Service.CipherService;
 import com.roro.wx.mp.Service.UserService;
+import com.roro.wx.mp.object.Cipher;
 import com.roro.wx.mp.object.User;
+import com.roro.wx.mp.utils.ImageUtils;
+import com.roro.wx.mp.utils.JsonUtils;
+import com.roro.wx.mp.utils.TestUtils;
 import org.junit.jupiter.api.Test;
+import org.opencv.core.CvType;
+import org.opencv.core.Mat;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-
 import javax.imageio.ImageIO;
+import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferByte;
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 
 @SpringBootTest
 public class readImageTest {
@@ -60,4 +68,37 @@ public class readImageTest {
         System.out.println(JSON.toJSONString(diff_arr));
     }
 
+    @Test
+    public void testNewFeature() throws IOException {
+        BufferedImage img1 = ImageIO.read(new File("tianluodiwang1.jpg"));
+        BufferedImage img2 = ImageIO.read(new File("tianluodiwang2.jpg"));
+        int[] f1 = ImageUtils.getFeatures(img1);
+        int[] f2 = ImageUtils.getFeatures(img2);
+        TestUtils.compareFeatures(f1,f2);
+        //TestUtils.compareImage(img1,img2);
+        //ImageUtils.write(img1,"png","img1.png");
+        //ImageUtils.write(img2,"png","img2.png");
+
+    }
+    @Test
+    public void truncate() throws  IOException{
+        int head = 50;
+        int tail = 150;
+        BufferedImage img1 = ImageIO.read(new File("jibuzeshi.jpg"));
+        int w = img1.getWidth();
+        int h = img1.getHeight();
+        BufferedImage img2 = ImageUtils.truncate(img1,head,0,tail,100);
+        //img2 = ImageUtils.resize(img2,32,32);
+        ImageIO.write(img2,"png",new File("output.png"));
+    }
+
+    @Test
+    public void ciphertest() throws  IOException{
+        int[] f = new int[]{1,2,3,4,5,1,2,3,41,2,3,2,1,31,21};
+        Cipher cipher = new Cipher("abcd.link",f);
+        String json = JsonUtils.toJson(cipher);
+        Cipher cipher2 = JsonUtils.json2Cipher(json);
+        System.out.println(json);
+        TestUtils.compareFeatures(cipher.getFeature(),cipher2.getFeature());
+    }
 }
