@@ -158,7 +158,8 @@ public class CipherService {
                 for(int i=0;i<origin.length;i++){
                     if(Math.abs(origin[i]-target[i])>threshold){
                         diffCnt++;
-                        if(diffCnt>=3)
+                        i = i/3*3+2;//每当一个通道差值超过阈值,则跳过该像素
+                        if(diffCnt>3) //像素级的误差最多不超过3,总共16*16像素.
                             continue  OUTER;
                     }
                 }
@@ -168,12 +169,13 @@ public class CipherService {
             commitTable.put(user.getKey(),cipher);
             return answer;
         }catch (Exception e){
+            commitTable.put(user.getKey(),null);
             throw new MpException(ErrorCodeEnum.CIPHER_RETRIVAL_ERROR);
         }
     }
 
     /**
-     * 获取user最近一次提交的暗号图，如果没有返回null
+     * 获取user最近一次提交的暗号图，
      * 每次查询/更新,都会更新提交表（hash表，key为appID+ID,value为cipher
      * @param user
      * @return
@@ -182,10 +184,16 @@ public class CipherService {
         Date now = DateUtils.now();
         String key = user.getKey();
         if(commitTable.containsKey(key)){
-            return commitTable.get(key);
+            Cipher ret =  commitTable.get(key);
+            if(ret==null)
+                throw new MpException(ErrorCodeEnum.RECENT_CIPHER_ERROR);
+            return ret;
         }else{
             throw new MpException(ErrorCodeEnum.NO_COMMIT_CIPHER);
         }
+    }
+    public void clearRecentCommit(User user){
+        commitTable.put(user.getKey(),null);
     }
     public HashMap<String,Cipher> getCipherTable(){
         return this.cipherTable;

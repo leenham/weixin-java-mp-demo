@@ -14,7 +14,9 @@ public class TestUtils {
         int totaldiff = 0;
         int total1 = 0,total2 = 0;
         for(int i=0;i<f1.length;i++){
-            System.out.println(String.format("f1[%d]=%d f2[%d]=%d",i,f1[i],i,f2[i]));
+            if(f1[i]==0 && f2[i]==0)
+                continue;
+            System.out.println(String.format("f1[%d]=%d f2[%d]=%d diff=%d",i,f1[i],i,f2[i],Math.abs(f1[i]-f2[i])));
             //System.out.println(String.format("diff:%.2f",Math.abs(f1[i]-f2[i])/(f1[i]+0.0)*100.0));
             maxdiff = Math.max(maxdiff,Math.abs(f1[i]-f2[i]));
             totaldiff += Math.abs(f1[i]-f2[i]);

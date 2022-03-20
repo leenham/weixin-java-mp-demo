@@ -81,6 +81,9 @@ public class MsgHandler extends AbstractHandler {
         try {
             return handleImageAsCipher(wxMessage);
         }catch (MpException me){
+            User user = userService.getUser(wxMessage.getToUser(),wxMessage.getFromUser());
+            //提交图片过程中发生异常,则清空最近一次提交,防止用户无意间修改了答案
+            cipherService.clearRecentCommit(user);
             if(me.getErrorCode()== ErrorCodeEnum.CIPHER_ILLEGAL_PIC.getCode() ||
                 me.getErrorCode()==ErrorCodeEnum.CIPHER_WITHOUT_QRCODE.getCode() ||
                 me.getErrorCode()==ErrorCodeEnum.CIPHER_WRONG_QRCODE.getCode()
