@@ -79,7 +79,7 @@ public class CipherService {
         //符合"答案:四字成语"格式的,被认为是合法输入
         if(text.matches("答案[\\s,:.]+.*")){
             String[] arr = text.split("[\\s,:.：]+",2);
-            if(arr.length!=2 || arr[1].length()<3 || arr[1].length()>5){
+            if(arr.length!=2 || arr[1].length()<2 || arr[1].length()>6){
                 throw new MpException(ErrorCodeEnum.CIPHER_ILLEGAL_ANSWER);
             }
             String answer = arr[1];
@@ -112,8 +112,8 @@ public class CipherService {
             //File file = FileUtils.saveUrlAs(url,filename);
             image = ImageIO.read(new URL(url));
             if(image.getWidth()<600 || image.getHeight()<1000)
-                throw new MpException(ErrorCodeEnum.CIPHER_ILLEGAL_PIC);
-            BufferedImage qrcodeRegion = ImageUtils.truncate(image,image.getHeight()-150,200,0,200);
+                throw new MpException(ErrorCodeEnum.CIPHER_SMALL_SIZE);
+            BufferedImage qrcodeRegion = ImageUtils.truncate(image,image.getHeight()-150,240,0,240);
             LuminanceSource source = new BufferedImageLuminanceSource(qrcodeRegion);
             Binarizer binarizer = new HybridBinarizer(source);
             BinaryBitmap binaryBitmap = new BinaryBitmap(binarizer);

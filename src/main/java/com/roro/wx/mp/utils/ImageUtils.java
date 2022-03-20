@@ -100,7 +100,9 @@ public class ImageUtils {
     }
     public static String parseQRCode(BufferedImage image){
         try {
-            BufferedImage qrcodeRegion = ImageUtils.truncate(image, image.getHeight() - 150, 200, 0, 200);
+            int leftmargin = 240;
+            int rightmargin = 240;
+            BufferedImage qrcodeRegion = ImageUtils.truncate(image, image.getHeight() - 150, rightmargin, 0, leftmargin);
             LuminanceSource source = new BufferedImageLuminanceSource(qrcodeRegion);
             Binarizer binarizer = new HybridBinarizer(source);
             BinaryBitmap binaryBitmap = new BinaryBitmap(binarizer);

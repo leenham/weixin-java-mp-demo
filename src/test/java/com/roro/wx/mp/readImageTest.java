@@ -21,6 +21,7 @@ import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
@@ -104,8 +105,12 @@ public class readImageTest {
     }
 
     @Test
-    public void checkCHP(){
+    public void checkCHP() throws IOException {
         HashMap<String,Cipher> map = cipherService.getCipherTable();
-        TestUtils.checkDatabase(map);
+        //TestUtils.checkDatabase(map);
+        for(String key:map.keySet()){
+            BufferedImage img = ImageIO.read(new URL(map.get(key).getUrl()));
+            ImageUtils.write(img,"jpg",String.format("cipher/%s.jpg",key));
+        }
     }
 }
