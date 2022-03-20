@@ -111,7 +111,9 @@ public class CipherService {
             //String filename = "cipher/"+String.valueOf(DateUtils.now().getTime())+".png";
             //File file = FileUtils.saveUrlAs(url,filename);
             image = ImageIO.read(new URL(url));
-            BufferedImage qrcodeRegion = ImageUtils.truncate(image,image.getHeight()-150,150,0,150);
+            if(image.getWidth()<600 || image.getHeight()<1000)
+                throw new MpException(ErrorCodeEnum.CIPHER_ILLEGAL_PIC);
+            BufferedImage qrcodeRegion = ImageUtils.truncate(image,image.getHeight()-150,200,0,200);
             LuminanceSource source = new BufferedImageLuminanceSource(qrcodeRegion);
             Binarizer binarizer = new HybridBinarizer(source);
             BinaryBitmap binaryBitmap = new BinaryBitmap(binarizer);

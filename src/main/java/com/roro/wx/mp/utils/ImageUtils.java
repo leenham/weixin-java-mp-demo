@@ -1,5 +1,8 @@
 package com.roro.wx.mp.utils;
 
+import com.google.zxing.*;
+import com.google.zxing.client.j2se.BufferedImageLuminanceSource;
+import com.google.zxing.common.HybridBinarizer;
 import com.roro.wx.mp.enums.ErrorCodeEnum;
 import com.roro.wx.mp.enums.MpException;
 import lombok.Getter;
@@ -10,6 +13,8 @@ import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ImageUtils {
     public static BufferedImage resize(BufferedImage originalImage, int targetWidth, int targetHeight) {
@@ -65,9 +70,6 @@ public class ImageUtils {
     public static int[] getFeatures(BufferedImage img) {
         int w = img.getWidth();
         int h = img.getHeight();
-        if(w<200 || h<300){
-            throw new MpException(ErrorCodeEnum.CIPHER_ILLEGAL_PIC);
-        }
         int resizew = 16;
         int resizeh = 16;
         BufferedImage tmp = ImageUtils.resize(ImageUtils.truncate(img,50,0,150,0),resizew,resizeh);
@@ -95,5 +97,22 @@ public class ImageUtils {
     }
     public static BufferedImage truncate(BufferedImage img, int top,int right,int bottom,int left){
         return img.getSubimage(left,top,img.getWidth()-left-right,img.getHeight()-top-bottom);
+    }
+    public static String parseQRCode(BufferedImage image){
+        try {
+            BufferedImage qrcodeRegion = ImageUtils.truncate(image, image.getHeight() - 150, 200, 0, 200);
+            LuminanceSource source = new BufferedImageLuminanceSource(qrcodeRegion);
+            Binarizer binarizer = new HybridBinarizer(source);
+            BinaryBitmap binaryBitmap = new BinaryBitmap(binarizer);
+            Map<DecodeHintType, Object> hints = new HashMap<DecodeHintType, Object>();
+            hints.put(DecodeHintType.CHARACTER_SET, "UTF-8");
+            Result result = new MultiFormatReader().decode(binaryBitmap, hints);//解码
+            String link = result.getText();
+            return link;
+        }catch(NotFoundException e){
+            return "读取图片错误";
+        }catch(Exception e){
+            return "解析二维码错误";
+        }
     }
 }
