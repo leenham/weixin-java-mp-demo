@@ -51,7 +51,7 @@ public class MsgHandler extends AbstractHandler {
                 reply = handleImage(wxMessage);
             }
         }catch(MpException e){
-            return new TextBuilder().build(e.getErrorCode()+e.getErrorMsg(), wxMessage, weixinService);
+            return new TextBuilder().build(String.format("%s(错误码:%d)",e.getErrorMsg(),e.getErrorCode()), wxMessage, weixinService);
         }
         if(reply.equals("")){
             return null;

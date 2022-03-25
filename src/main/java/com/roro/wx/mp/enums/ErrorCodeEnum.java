@@ -14,7 +14,7 @@ public enum ErrorCodeEnum {
     CIPHER_WITHOUT_QRCODE(90010003,"图片指定区域内未能检测出二维码"),
     CIPHER_WRONG_QRCODE(90010004,"检测出不属于暗号图的二维码"),
     NO_COMMIT_CIPHER(90010005,"请先上传暗号图,再输入答案"),
-    RECENT_CIPHER_ERROR(90010006,"最近一次提交的图片不是合法的暗号图,请上传官方原图"),
+    RECENT_CIPHER_ERROR(90010006,"最近一次提交的暗号图异常,请上传官方原图后再输入答案"),
     CIPHER_RETRIVAL_ERROR(90010007,"检索暗号图时发生异常"),
     FAIL_UPDATE_CIPHER_POOL(90010008,"更新暗号池时发生异常"),
     UNABLE_RESOLVE_CIPHER(90010009,"无法处理该暗号图"),
