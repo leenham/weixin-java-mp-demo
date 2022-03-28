@@ -52,7 +52,8 @@ public class SubscribeHandler extends AbstractHandler {
         }
 
         try {
-            return new TextBuilder().build("感谢关注", wxMessage, weixinService);
+            String content = String.format(">感谢关注~当前功能有:\n1.将官方暗号图发送至公众号(保存原图,不要截图),可检索答案\n2.输入赏春踏青答题活动关键词,获得题目信息\n");
+            return new TextBuilder().build(content, wxMessage, weixinService);
         } catch (Exception e) {
             this.logger.error(e.getMessage(), e);
         }
