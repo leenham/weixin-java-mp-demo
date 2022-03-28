@@ -12,7 +12,10 @@ public class Quiz {
     public static class Option{
         public String choice;
         public String result;
-        public Option(){}
+        public Option(){
+            this.choice = "";
+            this.result = "";
+        }
         public Option(String _choice,String _answer){
             this.choice = _choice;
             this.result = _answer;
@@ -24,6 +27,7 @@ public class Quiz {
 
     public Quiz(){
         this.optionList = new ArrayList<>();
+        this.body = "";
     }
 
     public String toJsonString(){
@@ -38,7 +42,19 @@ public class Quiz {
         List<Quiz.Option> optionList = this.getOptionList();
         for(int i=0;i<optionList.size();i++){
             Quiz.Option option = this.getOptionList().get(i);
-            sb.append('>'+option.getChoice()+'/'+option.getResult()+'\n');
+            sb.append('>'+option.getChoice()+' '+option.getResult()+'\n');
+        }
+        return sb.toString();
+    }
+    //测试时用的输出格式
+    public String toTestString(){
+        StringBuffer sb = new StringBuffer();
+        sb.append(String.format("%04d. ",this.getIndex()));
+        sb.append(this.getBody());sb.append('\n');
+        List<Quiz.Option> optionList = this.getOptionList();
+        for(int i=0;i<optionList.size();i++){
+            Quiz.Option option = this.getOptionList().get(i);
+            sb.append('-'+option.getChoice()+' '+option.getResult()+'\n');
         }
         return sb.toString();
     }

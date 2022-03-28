@@ -1,6 +1,7 @@
 package com.roro.wx.mp.Service;
 
 import com.alibaba.fastjson.JSON;
+import com.roro.wx.mp.object.Cipher;
 import com.roro.wx.mp.object.User;
 import com.roro.wx.mp.utils.DateUtils;
 import com.roro.wx.mp.utils.JsonUtils;
@@ -9,6 +10,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+
+import javax.annotation.PostConstruct;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * 提供用户相关的操作,包括CRUD,以及记录用户状态
@@ -23,15 +29,37 @@ public class UserService {
 
     @Autowired
     RedisUtils redisUtils;
+
+    Map<String,User> userMap;
+    @PostConstruct
+    public void init() {
+        if(userMap==null)
+            userMap = new HashMap<>();
+        try {
+            Set<Object> keyset = redisUtils.hkeys(userTableKey);
+            for(Object key:keyset){
+                User value = JsonUtils.json2User((String)redisUtils.hget(userTableKey,key));
+                userMap.put((String)key,value);
+            }
+            return;
+        }catch(Exception e){
+            log.error("从redis中读取用户表时出错");
+        }
+    }
+
     public User getUser(String appID, String ID){
         String userKey = appID+ID;
-        if(redisUtils.hexists(userTableKey,userKey)){
-            return JsonUtils.json2User((String) redisUtils.hget(userTableKey, userKey));
+        if(userMap.containsKey(userKey)){
+            return userMap.get(userKey);
         }else{
             User user = new User(appID,ID);
             redisUtils.hset(userTableKey,userKey,JsonUtils.user2Json(user));
             return user;
         }
+    }
+
+    public void addUser(User user){
+
     }
 
 }

@@ -55,6 +55,8 @@ public class MsgHandler extends AbstractHandler {
             }
         }catch(MpException e){
             return new TextBuilder().build(String.format("%s(错误码:%d)",e.getErrorMsg(),e.getErrorCode()), wxMessage, weixinService);
+        }catch(Exception e){
+            return new TextBuilder().build("发生未知故障.", wxMessage, weixinService);
         }
         return new TextBuilder().build(reply, wxMessage, weixinService);
     }
@@ -72,7 +74,7 @@ public class MsgHandler extends AbstractHandler {
             return String.format("已成功更新暗号池：%s",result);
         }
         //否则当做答题检索功能处理.
-        String reply = quizService.retrieval(keyword);
+        String reply = quizService.retrieval(user,keyword);
         return reply;
     }
 

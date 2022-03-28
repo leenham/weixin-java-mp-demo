@@ -1,6 +1,7 @@
 package com.roro.wx.mp.utils;
 
 import com.roro.wx.mp.object.Cipher;
+import com.roro.wx.mp.object.User;
 
 import java.awt.image.BufferedImage;
 import java.util.HashMap;
@@ -48,6 +49,13 @@ public class TestUtils {
     public static void checkDatabase(HashMap<String,Cipher> map){
         for(String key:map.keySet()){
             System.out.println(String.format("%s:%s",key,map.get(key).getUrl()));
+        }
+    }
+
+    public static void printUserTable(HashMap<String, User> map){
+        for(String key:map.keySet()){
+            User user = map.get(key);
+            System.out.println(user.toString());
         }
     }
 }

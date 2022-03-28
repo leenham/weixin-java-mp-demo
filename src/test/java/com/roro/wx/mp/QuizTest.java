@@ -51,11 +51,16 @@ public class QuizTest {
             qarr[q.getIndex()] = q;
         }
         for(int i=0;i<qarr.length;i++){
-            String  text = StringUtils.trimAllWhitespace(qarr[i].toFormatString());
+            String  text = StringUtils.trimLeadingWhitespace(qarr[i].toTestString());
             System.out.println(text);
         }
     }
 
+    @Test
+    public void myTest3(){
+
+
+    }
     @Test
     public void addQuizTest(){
         Quiz quiz = new Quiz();
