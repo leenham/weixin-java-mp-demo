@@ -100,7 +100,6 @@ public class readImageTest {
     @Test
     public void ciphertest() throws IOException {
         BufferedImage image = ImageIO.read(new File("xiaoqiao.png"));
-
         System.out.println(ImageUtils.parseQRCode(image));
     }
 

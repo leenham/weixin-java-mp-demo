@@ -21,6 +21,13 @@ public enum ErrorCodeEnum {
     CIPHER_SMALL_SIZE(90010010,"图片尺寸太小,请发送官方暗号图原图"),
     CIPHER_UNKNOWN_ERROR(90010999, "处理暗号图时未知异常"),
 
+    /*处理答题报错*/
+    NO_QUIZ_FOUND(90020001,"未找到匹配项,请尝试更换检索词"),
+    QUIZ_ILLEGAL_UPDATE(90020002,"更新题库时发生异常,请检查输入格式"),
+    QUIZ_WRONG_LABEL(90020003,"题目编号格式错误,请检查输入格式"),
+    QUIZ_UNEXIST_LABEL(90020004,"当前编号不存在,请修改后重新输入"),
+    QUIZ_UNKNOWN_ERROR(90020999,"答题助手发生未知异常"),
+
     PLACE_HOLDER(99999999,"占位符");
     private int code;
     private String desc;

@@ -1,6 +1,7 @@
 package com.roro.wx.mp.handler;
 
 import com.roro.wx.mp.Service.CipherService;
+import com.roro.wx.mp.Service.QuizService;
 import com.roro.wx.mp.Service.UserService;
 import com.roro.wx.mp.builder.TextBuilder;
 import com.roro.wx.mp.enums.ErrorCodeEnum;
@@ -33,6 +34,8 @@ public class MsgHandler extends AbstractHandler {
     UserService userService;
     @Autowired
     CipherService cipherService;
+    @Autowired
+    QuizService quizService;
 
     @Override
     public WxMpXmlOutMessage handle(WxMpXmlMessage wxMessage,
@@ -53,10 +56,7 @@ public class MsgHandler extends AbstractHandler {
         }catch(MpException e){
             return new TextBuilder().build(String.format("%s(错误码:%d)",e.getErrorMsg(),e.getErrorCode()), wxMessage, weixinService);
         }
-        if(reply.equals("")){
-            return null;
-        }else
-            return new TextBuilder().build(reply, wxMessage, weixinService);
+        return new TextBuilder().build(reply, wxMessage, weixinService);
     }
 
 
@@ -65,15 +65,15 @@ public class MsgHandler extends AbstractHandler {
         //处理文本类的消息
         User user = userService.getUser(wxMessage.getToUser(),wxMessage.getFromUser());
         String result = cipherService.checkCipherAnswer(keyword);
-        if(result==null || result.equals("")){
-            //说明输入的不是暗号图的答案.当前不予以响应.
-            return "";
-        }else {
+        if(result!=null && !result.equals("")){
             //输入如果符合暗号答案格式，就读取该用户最近一次提交的暗号图，并更新暗号池
             Cipher cipher = cipherService.getRecentCommit(user);
             cipherService.addCipherRecord(cipher,result);
             return String.format("已成功更新暗号池：%s",result);
         }
+        //否则当做答题检索功能处理.
+        String reply = quizService.retrieval(keyword);
+        return reply;
     }
 
     //处理图片类的消息

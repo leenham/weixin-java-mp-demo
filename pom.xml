@@ -10,7 +10,7 @@
     </parent>
 
     <groupId>com.github.binarywang</groupId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.1.0-SNAPSHOT</version>
     <artifactId>weixin-java-mp-demo</artifactId>
     <packaging>jar</packaging>
 
@@ -89,11 +89,6 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-pool2</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.github.jedis-lock</groupId>
-            <artifactId>jedis-lock</artifactId>
-            <version>1.0.0</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

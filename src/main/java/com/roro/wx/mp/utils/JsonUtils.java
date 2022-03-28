@@ -1,6 +1,7 @@
 package com.roro.wx.mp.utils;
 
 import com.roro.wx.mp.object.Cipher;
+import com.roro.wx.mp.object.Quiz;
 import com.roro.wx.mp.object.User;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -35,5 +36,5 @@ public class JsonUtils {
     public static User json2User(String json){
         return (User)JsonUtils.fromJson(json,User.class);
     }
-
+    public static Quiz json2Quiz(String json){ return (Quiz)JsonUtils.fromJson(json,Quiz.class);}
 }
