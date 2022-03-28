@@ -6,6 +6,9 @@ import lombok.Getter;
 public enum ErrorCodeEnum {
     SUCCESS(900000,"成功"),
     RECEIVED(900001,"已接收到请求"),
+    NO_AUTH(900002,"操作权限不足,请联系开发者."),
+    ENDUE_AUTH_FAIL(900003,"授权失败"),
+    USER_UNEXISTED(900004,"该用户不存在"),
     UNKNOWN_ERROR(900099,"系统未知错误"),
 
     /*处理暗号图报错*/

@@ -1,7 +1,10 @@
 package com.roro.wx.mp;
 
 import com.roro.wx.mp.Service.QuizService;
+import com.roro.wx.mp.Service.UserService;
 import com.roro.wx.mp.object.Quiz;
+import com.roro.wx.mp.object.User;
+import com.roro.wx.mp.utils.AuthUtils;
 import com.roro.wx.mp.utils.JsonUtils;
 import com.roro.wx.mp.utils.RedisUtils;
 import org.junit.jupiter.api.Test;
@@ -20,6 +23,8 @@ public class QuizTest {
     QuizService quizService;
     @Autowired
     RedisUtils redisUtils;
+    @Autowired
+    UserService userService;
     @Test
     public void myTest(){
         Quiz quiz = new Quiz();
@@ -58,8 +63,11 @@ public class QuizTest {
 
     @Test
     public void myTest3(){
-
-
+        User user = userService.getUser("gh_e14b7dc2719d","oPTW65-9jB8v3d-WayIV0wBTESvQ");
+        user.setAuthCode(0);
+        userService.authorize(user, 0);
+        System.out.println(user.toTestString());
+        System.out.println("授权成功");
     }
     @Test
     public void addQuizTest(){

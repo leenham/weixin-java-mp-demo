@@ -49,17 +49,21 @@ public class UserService {
 
     public User getUser(String appID, String ID){
         String userKey = appID+ID;
-        if(userMap.containsKey(userKey)){
-            return userMap.get(userKey);
-        }else{
+        if(!userMap.containsKey(userKey) || userMap.get(userKey)==null){
             User user = new User(appID,ID);
-            redisUtils.hset(userTableKey,userKey,JsonUtils.user2Json(user));
-            return user;
+            userMap.put(user.getKey(),user);
+            redisUtils.hset(userTableKey,user.getKey(),JsonUtils.user2Json(user));
         }
+        return userMap.get(userKey);
     }
 
-    public void addUser(User user){
-
+    public void authorize(User user,int authCode){
+        user.setAuthCode(user.getAuthCode() | authCode);
+        userMap.put(user.getKey(),user);
+        redisUtils.hset(userTableKey,user.getKey(),JsonUtils.user2Json(user));
+        return;
     }
-
+    public boolean hasUser(String appID,String ID){
+        return userMap.containsKey(appID+ID);
+    }
 }

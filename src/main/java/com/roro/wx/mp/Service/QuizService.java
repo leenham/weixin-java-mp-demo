@@ -6,6 +6,7 @@ import com.roro.wx.mp.object.Cipher;
 import com.roro.wx.mp.object.LanternEvent;
 import com.roro.wx.mp.object.Quiz;
 import com.roro.wx.mp.object.User;
+import com.roro.wx.mp.utils.AuthUtils;
 import com.roro.wx.mp.utils.JsonUtils;
 import com.roro.wx.mp.utils.LanternUtils;
 import com.roro.wx.mp.utils.RedisUtils;
@@ -31,6 +32,9 @@ public class QuizService {
 
     @Autowired
     RedisUtils redisUtils;
+
+    @Autowired
+    UserService userService;
 
     int LIMITSIZE = 5;
     Map<String,String> quizMap;  //题库在内存中的备份,每次部署会从数据库中读取.
@@ -88,17 +92,46 @@ public class QuizService {
      * 用户信息主要用来记录并判断是否有权限能够修改题目
      */
     public String retrieval(User user, String keyword){
-
         //处理特殊的请求"添加新题目",添加一条空的quiz记录,并写入到该用户的最近提交记录里
         if(keyword.equals("添加新题目")){
+            if((user.getAuthCode()& AuthUtils.ROOT)==0){
+                throw new MpException(ErrorCodeEnum.NO_AUTH);
+            }
             Quiz q = new Quiz();
             q.setLabel("#9999");
             addQuiz(q);
             recentCommit.put(user.getKey(),q);
             return q.toFormatString();
         }
+        //授权 appID ID 给指定用户赋予管理员权限,该权限可用于提交在线修改指令
+        if(keyword.matches("^授权 \\S* \\S*$")){
+            if((user.getAuthCode()&AuthUtils.SUPERROOT)==0)
+                throw new MpException(ErrorCodeEnum.NO_AUTH);
+            try {
+                String[] arr = keyword.split(" ");
+                if(!arr[1].startsWith("gh_"))
+                    throw new MpException(ErrorCodeEnum.ENDUE_AUTH_FAIL);
+                String appID = arr[1];
+                String ID = arr[2];
+                if(!userService.hasUser(appID,ID)){
+                    throw new MpException(ErrorCodeEnum.USER_UNEXISTED);
+                }else{
+                    User target = userService.getUser(appID,ID);
+                    userService.authorize(target,AuthUtils.ROOT);
+                    return "授权成功";
+                }
+            }catch(MpException me){
+                throw me;
+            }
+            catch (Exception e){
+                throw new MpException(ErrorCodeEnum.UNKNOWN_ERROR);
+            }
+        }
         //处理中文简单的指令.方便大家一起来修改题目
-        if(keyword.matches("^(选项. |题干 ).*")){
+        if(keyword.matches("^(选项. |题干 )\\S*")){
+            if((user.getAuthCode()& AuthUtils.ROOT)==0){
+                throw new MpException(ErrorCodeEnum.NO_AUTH);
+            }
             if(!recentCommit.containsKey(user.getKey()) || recentCommit.get(user.getKey())==null){
                 throw new MpException(ErrorCodeEnum.NO_RECENT_COMMIT_QUIZ);
             }else{
@@ -152,6 +185,9 @@ public class QuizService {
 
         //以json格式作为输入的,当做更新记录处理
         if(keyword.startsWith("{\"body\":") && keyword.matches(".*#[0-9]{4}.*")) {
+            if((user.getAuthCode()& AuthUtils.ROOT)==0){
+                throw new MpException(ErrorCodeEnum.NO_AUTH);
+            }
             String content = "";
             try{
                 //如果这个语句能顺利执行，说明输入是合法的

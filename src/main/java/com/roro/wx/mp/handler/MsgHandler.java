@@ -61,11 +61,14 @@ public class MsgHandler extends AbstractHandler {
         return new TextBuilder().build(reply, wxMessage, weixinService);
     }
 
-
+    //处理文本类的消息
     private String handleText(WxMpXmlMessage wxMessage){
         String keyword = wxMessage.getContent();
-        //处理文本类的消息
         User user = userService.getUser(wxMessage.getToUser(),wxMessage.getFromUser());
+        //查看是否是授权类请求,用于查看自己的信息,暂时只允许后台授权好了,需要对方提供appID和ID
+        if(keyword.equals("#查看信息")){
+            return String.format("appID:%s\nID:%s\n权限码:%x",user.getAppID(),user.getID(),user.getAuthCode());
+        }
         String result = cipherService.checkCipherAnswer(keyword);
         if(result!=null && !result.equals("")){
             //输入如果符合暗号答案格式，就读取该用户最近一次提交的暗号图，并更新暗号池

@@ -26,7 +26,7 @@ public class User {
     }
     public String toTestString(){
         StringBuffer sb = new StringBuffer();
-        sb.append(String.format("app:%s | %s",appID,ID));
+        sb.append(String.format("app:%s\nid:%s\nauth:%x",appID,ID,authCode));
         return sb.toString();
     }
 

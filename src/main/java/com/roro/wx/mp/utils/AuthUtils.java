@@ -1,5 +1,7 @@
 package com.roro.wx.mp.utils;
 
+import com.roro.wx.mp.object.User;
+
 /**
  * 用于权限认证,32个权限位应该够用了
  * bit位置    对应权限
@@ -23,4 +25,5 @@ public class AuthUtils {
     public static boolean isBlackList(int authCode){
         return (authCode & BLACKLIST)>0;
     }
+
 }
