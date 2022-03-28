@@ -63,9 +63,9 @@ public class QuizTest {
 
     @Test
     public void myTest3(){
-        User user = userService.getUser("gh_e14b7dc2719d","oPTW65-9jB8v3d-WayIV0wBTESvQ");
-        user.setAuthCode(0);
-        userService.authorize(user, 0);
+        User user = userService.getUser("gh_e49c690b134c","ordq25t5F03K5rXvsgktUB2IjMfA");
+        //user.setAuthCode(0);
+        userService.authorize(user, AuthUtils.SUPERROOT);
         System.out.println(user.toTestString());
         System.out.println("授权成功");
     }

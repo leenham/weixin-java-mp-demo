@@ -128,7 +128,7 @@ public class QuizService {
             }
         }
         //处理中文简单的指令.方便大家一起来修改题目
-        if(keyword.matches("^(选项. |题干 )\\S*")){
+        if(keyword.matches("^(选项\\S |题干 )\\S*( \\S*)?")){
             if((user.getAuthCode()& AuthUtils.ROOT)==0){
                 throw new MpException(ErrorCodeEnum.NO_AUTH);
             }
@@ -154,11 +154,10 @@ public class QuizService {
                         if(splitArr.length==1){
                             //如果只有一段输入,默认直接添加到answer后边
                             Quiz.Option opt = q.getOptionList().get(idx);
-                            if(opt.getResult()==null || opt.getResult().equals(""))
+                            if(opt.getResult()==null || opt.getResult().equals("") || opt.getResult().equals("空") || opt.getResult().equals("空白"))
                                 opt.setResult(splitArr[0]);
                             else
                                 opt.setResult(opt.getResult()+'/'+splitArr[0]);
-                            //q.getOptionList().set(idx,opt);
                         }else if(splitArr.length==2){
                             //否则视作第一次添加,覆盖该选项的choice,并覆盖answer
                             List<Quiz.Option> optionList = q.getOptionList();
@@ -168,8 +167,6 @@ public class QuizService {
                             Quiz.Option opt = optionList.get(idx);
                             opt.setChoice(splitArr[0]);
                             opt.setResult(splitArr[1]);
-                            //optionList.set(idx,opt);
-                            //q.setOptionList(optionList);
                         }else{
                             throw new MpException(ErrorCodeEnum.QUIZ_WRONG_CHOICE);
                         }
