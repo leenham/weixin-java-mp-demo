@@ -109,8 +109,9 @@ public class QuizService {
                 throw new MpException(ErrorCodeEnum.NO_AUTH);
             try {
                 String[] arr = keyword.split(" ");
-                if(!arr[1].startsWith("gh_"))
+                if(!arr[1].startsWith("gh_")) {
                     throw new MpException(ErrorCodeEnum.ENDUE_AUTH_FAIL);
+                }
                 String appID = arr[1];
                 String ID = arr[2];
                 if(!userService.hasUser(appID,ID)){
@@ -154,7 +155,7 @@ public class QuizService {
                         if(splitArr.length==1){
                             //如果只有一段输入,默认直接添加到answer后边
                             Quiz.Option opt = q.getOptionList().get(idx);
-                            if(opt.getResult()==null || opt.getResult().equals("") || opt.getResult().equals("空") || opt.getResult().equals("空白"))
+                            if(opt.getResult()==null || opt.getResult().equals(""))
                                 opt.setResult(splitArr[0]);
                             else
                                 opt.setResult(opt.getResult()+'/'+splitArr[0]);
@@ -166,6 +167,8 @@ public class QuizService {
                             }
                             Quiz.Option opt = optionList.get(idx);
                             opt.setChoice(splitArr[0]);
+                            if(splitArr[1].equals("空") || splitArr[1].equals("空白"))
+                                splitArr[1] = "";
                             opt.setResult(splitArr[1]);
                         }else{
                             throw new MpException(ErrorCodeEnum.QUIZ_WRONG_CHOICE);

@@ -66,4 +66,7 @@ public class UserService {
     public boolean hasUser(String appID,String ID){
         return userMap.containsKey(appID+ID);
     }
+    public Map<String,User> getUserMap(){
+        return userMap;
+    }
 }

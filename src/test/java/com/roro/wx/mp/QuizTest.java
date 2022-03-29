@@ -63,11 +63,28 @@ public class QuizTest {
 
     @Test
     public void myTest3(){
-        User user = userService.getUser("gh_e49c690b134c","ordq25t5F03K5rXvsgktUB2IjMfA");
-        //user.setAuthCode(0);
+        //授权超管的代码
+        /*String ID = "oPTW65675LhREqTvjyMXdjeNvpho";
+        Map<String,User> userMap = userService.getUserMap();
+        for(String key:userMap.keySet()){
+            if(key.contains(ID)){
+                System.out.println(userMap.get(key).toTestString());
+            }
+        }*/
+        String appID = "gh_e14b7dc2719d";
+        String ID = "oPTW65675LhREqTvjyMXdjeNvpho";
+        User user = userService.getUser(appID,ID);
         userService.authorize(user, AuthUtils.SUPERROOT);
         System.out.println(user.toTestString());
         System.out.println("授权成功");
+
+        //授权普通管理的代码
+        /*String appID = "gh_e14b7dc2719d";
+        String ID = "";
+        User user = userService.getUser(appID,ID);
+        userService.authorize(user, AuthUtils.SUPERROOT);
+        System.out.println(user.toTestString());
+        System.out.println("授权成功");*/
     }
     @Test
     public void addQuizTest(){
