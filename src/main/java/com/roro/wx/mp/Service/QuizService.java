@@ -92,42 +92,18 @@ public class QuizService {
                 if(!AuthUtils.isRoot(user.getAuthCode())) {
                     throw new MpException(ErrorCodeEnum.NO_AUTH);
                 }
-                String[] splitArr = keyword.split("\\s+");
-                int choiceIdx = getOptionNumberInCommand(splitArr[0]);
                 if(!recentCommit.containsKey(user.getKey()) || recentCommit.get(user.getKey())==null){
                     throw new MpException(ErrorCodeEnum.NO_RECENT_COMMIT_QUIZ);
                 }
+                String[] splitArr = keyword.split("\\s+");
+                int choiceIdx = getOptionNumberInCommand(splitArr[0]);
                 Quiz q = recentCommit.get(user.getKey());
-                while(choiceIdx>=q.getOptionList().size()){
-                    q.getOptionList().add(new Quiz.Option());
-                }
-                Quiz.Option option = q.getOptionList().get(choiceIdx);
                 if(splitArr.length==2){
                     //选项一 内容 ==> 如果对应的选项为空,则覆盖选项;否则,给该选项添加新结果
-                    if(splitArr[1].equals("清空")) {
-                        //如果内容是特殊指令:清空,则清空该选项
-                        option.setChoice("");
-                        option.setResult("");
-                    }else if(splitArr[1].equals("广告")){
-                        if(!option.getChoice().startsWith("(广告)")){
-                            option.setChoice("(广告)"+option.getChoice());
-                        }
-                    }else if(option.getChoice()==null || option.getChoice().equals("")) {
-                        option.setChoice(splitArr[1]);
-                    }else {
-                        if(option.getResult()==null || option.getResult().equals("")){
-                            option.setResult(splitArr[1]);
-                        }else{
-                            option.setResult(option.getResult() +'/' + splitArr[1]);
-                        }
-                    }
+                    q.setOption(choiceIdx,splitArr[1]);
                 }else if(splitArr.length==3){
                     //选项一 内容1 内容2 ==> 内容1覆盖选项,内容2覆盖结果
-                    option.setChoice(splitArr[1]);
-                    if(splitArr[2].equals("空") || splitArr[2].equals("清空")) {
-                        splitArr[2] = "";
-                    }
-                    option.setResult(splitArr[2]);
+                    q.setOption(choiceIdx,splitArr[1],splitArr[2]);
                 }else{
                     throw new MpException(ErrorCodeEnum.QUIZ_WRONG_COMMAND);
                 }
@@ -155,11 +131,15 @@ public class QuizService {
                 return q.toFormatString();
             }
             //清空指定编号的题
-            if(keyword.matches("^清空 [0-9]{4}$")){
+            if(keyword.matches("^(清空\\s+[0-9]{4})|([0-9]{4}\\s+清空)$")){
                 if(!AuthUtils.isRoot(user.getAuthCode())) {
                     throw new MpException(ErrorCodeEnum.NO_AUTH);
                 }
-                String label = '#'+keyword.substring(3,7);
+                String[] splitArr = keyword.split("\\s+");
+                if(splitArr[1].equals("清空")){
+                    splitArr[1] = splitArr[0];
+                }
+                String label = '#'+splitArr[1];
                 if(quizMap.containsKey(label)){
                     Quiz q = new Quiz();
                     q.setLabel(label);
@@ -170,13 +150,25 @@ public class QuizService {
                     return String.format("编号%s 不存在",label);
                 }
             }
+            //给指定选项 清空 或者 添加广告标志
+            if(keyword.matches("^(清空|广告)\\s+(1|2|3|4|5|一|二|三|四|五)")){
+                if(!AuthUtils.isRoot(user.getAuthCode())) {
+                    throw new MpException(ErrorCodeEnum.NO_AUTH);
+                }
+                if(!recentCommit.containsKey(user.getKey()) || recentCommit.get(user.getKey())==null){
+                    throw new MpException(ErrorCodeEnum.NO_RECENT_COMMIT_QUIZ);
+                }
+                String[] splitArr = keyword.split("\\s+");
+                int choiceIdx = getOptionNumberInCommand(splitArr[1]);
+                Quiz q = recentCommit.get(user.getKey());
+                q.setOption(choiceIdx,splitArr[0]);
+            }
             throw new MpException(ErrorCodeEnum.UNHANDLED);
         }catch(MpException me){
             if(me.getErrorCode()!=ErrorCodeEnum.UNHANDLED.getCode()){
                 throw me;
             }
         }
-
         //否则遍历题库,寻找匹配项
         StringBuffer sb = new StringBuffer();
         List<Quiz> selected = new ArrayList<>();

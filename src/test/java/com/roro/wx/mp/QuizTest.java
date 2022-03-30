@@ -49,18 +49,17 @@ public class QuizTest {
     @Test
     public void myTest2(){
         //get QUIZ database
-        /*Map<String,Quiz> quizMap = quizService.getQuizMap();
+        Map<String,Quiz> quizMap = quizService.getQuizMap();
+        /*for(String key:quizMap.keySet()){
+            Quiz q = quizMap.get(key);
+            System.out.println(q.toFormatString());
+        }*/
         for(int i=0;i<quizMap.size();i++){
             String label = String.format("#%04d",i);
-            if(!quizMap.containsKey(label)){
-                System.out.println("不存在key:"+label);
-            }
             Quiz q = quizMap.get(label);
-            System.out.println(String.format("%d:%s",i,q));
-        }*/
-        Quiz q = new Quiz();
-        q.setLabel("#0125");
-        quizService.addQuiz(q);
+            System.out.println(q.toFormatString());
+        }
+
     }
 
     @Test

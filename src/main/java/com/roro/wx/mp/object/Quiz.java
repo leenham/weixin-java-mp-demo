@@ -30,6 +30,7 @@ public class Quiz {
         this.optionList = new ArrayList<>();
         this.body = "";
         this.title = "";
+        this.label = "#0000";
     }
 
     public String toJsonString(){
@@ -77,5 +78,52 @@ public class Quiz {
     }
     public void setLabel(String _label){
         this.label = _label;
+    }
+    public void clearQuiz(){
+        this.setLabel(0);
+        this.setTitle("");
+        this.setBody("");
+        this.setOptionList(new ArrayList<Quiz.Option>());
+    }
+    public void setOption(int idx,String content){
+        while (idx >= optionList.size()) {
+            this.getOptionList().add(new Option());
+        }
+        Quiz.Option option = optionList.get(idx);
+        if(content.equals("清空")){
+            this.clearOption(idx);
+            return;
+        }else if(content.equals("广告")){
+            if(!option.getChoice().startsWith("(广告)")){
+                option.setChoice("(广告)"+option.getChoice());
+            }
+        }else if(option.getChoice()==null || option.getChoice().equals("")) {
+            option.setChoice(content);
+        }else {
+            if(option.getResult()==null || option.getResult().equals("")){
+                option.setResult(content);
+            }else{
+                option.setResult(option.getResult() +'/' + content);
+            }
+        }
+    }
+    public void setOption(int idx,String content1,String content2){
+        while (idx >= optionList.size()) {
+            this.getOptionList().add(new Option());
+        }
+        Quiz.Option option = optionList.get(idx);
+        if(content2.equals("空") || content2.equals("清空")) {
+            content2 = "";
+        }
+        option.setChoice(content1);
+        option.setResult(content2);
+        return;
+    }
+    public void clearOption(int idx){
+        if(idx>=optionList.size())return;
+        Quiz.Option option = optionList.get(idx);
+        option.setResult("");
+        option.setChoice("");
+        return;
     }
 }
