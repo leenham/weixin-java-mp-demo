@@ -10,6 +10,7 @@ import com.roro.wx.mp.object.Cipher;
 import com.roro.wx.mp.object.User;
 import com.roro.wx.mp.Service.LanternService;
 
+import com.roro.wx.mp.utils.AuthUtils;
 import lombok.extern.slf4j.Slf4j;
 import me.chanjar.weixin.common.session.WxSessionManager;
 import me.chanjar.weixin.mp.api.WxMpService;
@@ -53,35 +54,88 @@ public class MsgHandler extends AbstractHandler {
             }else if(msgType.equals("image")){
                 reply = handleImage(wxMessage);
             }
+
+            return new TextBuilder().build(reply, wxMessage, weixinService);
         }catch(MpException e){
             return new TextBuilder().build(String.format("%s(错误码:%d)",e.getErrorMsg(),e.getErrorCode()), wxMessage, weixinService);
         }catch(Exception e){
-            return new TextBuilder().build("发生未知故障.", wxMessage, weixinService);
+            return new TextBuilder().build("系统发生未知故障.", wxMessage, weixinService);
         }
-        return new TextBuilder().build(reply, wxMessage, weixinService);
     }
 
     //处理文本类的消息
     private String handleText(WxMpXmlMessage wxMessage){
-        String keyword = wxMessage.getContent();
+        String keyword = wxMessage.getContent().trim();//去除首尾的空格
         User user = userService.getUser(wxMessage.getToUser(),wxMessage.getFromUser());
-        //查看是否是授权类请求,用于查看自己的信息,暂时只允许后台授权好了,需要对方提供appID和ID
-        if(keyword.equals("#查看信息")){
-            return String.format("appID:%s\nID:%s\n权限码:%x",user.getAppID(),user.getID(),user.getAuthCode());
-        }
-        String result = cipherService.checkCipherAnswer(keyword);
-        if(result!=null && !result.equals("")){
-            //输入如果符合暗号答案格式，就读取该用户最近一次提交的暗号图，并更新暗号池
-            Cipher cipher = cipherService.getRecentCommit(user);
-            cipherService.addCipherRecord(cipher,result);
-            return String.format("已成功更新暗号池：%s",result);
+        try{
+            return handleSpecialCommand(user,keyword);
+        }catch(MpException e){
+            //说明未能处理该消息,应该交给之后的其他功能去处理,否则就向外抛
+            if(e.getErrorCode()!=ErrorCodeEnum.UNHANDLED.getCode()){
+                throw e;//如果已经受理但是还是报错,那么就把这个错误向外抛.
+            }
         }
         //否则当做答题检索功能处理.
         String reply = quizService.retrieval(user,keyword);
         return reply;
     }
-
+    //处理一些特殊的指令
+    private String handleSpecialCommand(User user,String keyword){
+        /* 允许他们自行查看自己的appID和ID,这样方便我将他们和具体的人对应起来*/
+        if(keyword.equals("#查看信息")){
+            return String.format("appID:%s\nID:%s\n权限码:%x",user.getAppID(),user.getID(),user.getAuthCode());
+        }
+        /* 方便我在线将内存中的表和数据库进行同步*/
+        if(keyword.equals("#刷新")){
+            if(!AuthUtils.isSuperRoot(user.getAuthCode())){
+                throw new MpException(ErrorCodeEnum.NO_AUTH);
+            }
+            userService.init();
+            cipherService.init();
+            quizService.init();
+            return "刷新成功";
+        }
+        //授权 appID ID authCode 给指定用户赋予管理员权限,该权限可用于提交在线修改指令
+        if(keyword.matches("^授权 \\S* \\S* [0-9]+$")){
+            //只有超级管理员,也就是我自己才能随意赋权. 对于授权码的格式,就不做限制了,我自己知道怎么攻击自己(ૢ˃ꌂ˂ૢ)
+            if((user.getAuthCode()& AuthUtils.SUPERROOT)==0)
+                throw new MpException(ErrorCodeEnum.NO_AUTH);
+            try {
+                String[] arr = keyword.split(" ");
+                String appID = arr[1];
+                String ID = arr[2];
+                int authCode = Integer.valueOf(arr[3]);
+                if(!userService.hasUser(appID,ID)){
+                    throw new MpException(ErrorCodeEnum.USER_UNEXISTED);
+                }else{
+                    User target = userService.getUser(appID,ID);
+                    userService.authorize(target,authCode);
+                    return String.format("给ID:%s授权%d成功.",target.getID(),authCode);
+                }
+            }catch(MpException me){
+                throw me;
+            }
+            catch (Exception e){
+                throw new MpException(ErrorCodeEnum.SPECIAL_COMMAND_ERROR);
+            }
+        }
+        //处理 答案:四字成语 格式的输入,视作更新暗号图的答案
+        if(keyword.matches("答案[\\s,:.]+.*")){
+            String[] arr = keyword.split("[\\s,:.：]+",2);
+            if(arr.length!=2 || arr[1].length()<2 || arr[1].length()>6){
+                throw new MpException(ErrorCodeEnum.CIPHER_ILLEGAL_ANSWER);
+            }
+            String answer = arr[1];
+            //读取该用户最近一次提交的暗号图，并更新暗号池
+            Cipher cipher = cipherService.getRecentCommit(user);
+            cipherService.addCipherRecord(cipher,answer);
+            return String.format("已成功更新暗号池：%s",answer);
+        }
+        //默认会报未处理该消息的异常
+        throw new MpException(ErrorCodeEnum.UNHANDLED);
+    }
     //处理图片类的消息
+
     private String handleImage(WxMpXmlMessage wxMessage){
         try {
             return handleImageAsCipher(wxMessage);

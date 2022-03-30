@@ -37,44 +37,18 @@ public class QuizService {
     UserService userService;
 
     int LIMITSIZE = 5;
-    Map<String,String> quizMap;  //题库在内存中的备份,每次部署会从数据库中读取.
+    Map<String,Quiz> quizMap;  //题库在内存中的备份,每次部署会从数据库中读取.
     Map<String,Quiz> recentCommit; //用来记录用户最近的一次提交,用于识别他们修改的对象,就不写入数据库了
-    Set<String> commandList;
-    Map<Character,Integer> choiceIdxMap; //用于处理中文和数字下标到int之间的映射
     @PostConstruct
     public void init(){
         quizMap = new HashMap<>();
-        commandList = new HashSet<>();
         recentCommit = new HashMap<>();
-        choiceIdxMap = new HashMap<>();
         try{
             Set<Object> keyset = redisUtils.hkeys(quizDBKey);
             for(Object key:keyset){
                 String quizText = (String)(redisUtils.hget(quizDBKey,key));
-                quizMap.put((String)key,quizText);
+                quizMap.put((String)key,JsonUtils.json2Quiz(quizText));
             }
-            commandList.add("题干");
-            commandList.add("选项1");
-            commandList.add("选项2");
-            commandList.add("选项3");
-            commandList.add("选项4");
-            commandList.add("选项5");
-            commandList.add("选项一");
-            commandList.add("选项二");
-            commandList.add("选项三");
-            commandList.add("选项四");
-            commandList.add("选项五");
-            choiceIdxMap.put('一',0);
-            choiceIdxMap.put('二',1);
-            choiceIdxMap.put('三',2);
-            choiceIdxMap.put('四',3);
-            choiceIdxMap.put('五',4);
-            choiceIdxMap.put('1',0);
-            choiceIdxMap.put('2',1);
-            choiceIdxMap.put('3',2);
-            choiceIdxMap.put('4',3);
-            choiceIdxMap.put('5',4);
-
             return;
         }catch(Exception e){
             log.error("从Redis中读取赏春踏青活动题库时出错.");
@@ -92,127 +66,122 @@ public class QuizService {
      * 用户信息主要用来记录并判断是否有权限能够修改题目
      */
     public String retrieval(User user, String keyword){
-        //处理特殊的请求"添加新题目",添加一条空的quiz记录,并写入到该用户的最近提交记录里
-        if(keyword.equals("添加新题目")){
-            if((user.getAuthCode()& AuthUtils.ROOT)==0){
-                throw new MpException(ErrorCodeEnum.NO_AUTH);
-            }
-            Quiz q = new Quiz();
-            q.setLabel("#9999");
-            addQuiz(q);
-            recentCommit.put(user.getKey(),q);
-            return q.toFormatString();
-        }
-        //授权 appID ID 给指定用户赋予管理员权限,该权限可用于提交在线修改指令
-        if(keyword.matches("^授权 \\S* \\S*$")){
-            if((user.getAuthCode()&AuthUtils.SUPERROOT)==0)
-                throw new MpException(ErrorCodeEnum.NO_AUTH);
-            try {
-                String[] arr = keyword.split(" ");
-                if(!arr[1].startsWith("gh_")) {
-                    throw new MpException(ErrorCodeEnum.ENDUE_AUTH_FAIL);
+        /* 优先处理修改指令的请求 */
+        try{
+            //处理添加新题目的请求
+            if(keyword.matches("^(添题|新题|加题|添加新题目)$")){
+                if(!AuthUtils.isRoot(user.getAuthCode())){
+                    throw new MpException(ErrorCodeEnum.NO_AUTH);
                 }
-                String appID = arr[1];
-                String ID = arr[2];
-                if(!userService.hasUser(appID,ID)){
-                    throw new MpException(ErrorCodeEnum.USER_UNEXISTED);
-                }else{
-                    User target = userService.getUser(appID,ID);
-                    userService.authorize(target,AuthUtils.ROOT);
-                    return "授权成功";
-                }
-            }catch(MpException me){
-                throw me;
-            }
-            catch (Exception e){
-                throw new MpException(ErrorCodeEnum.UNKNOWN_ERROR);
-            }
-        }
-        //处理中文简单的指令.方便大家一起来修改题目
-        if(keyword.matches("^(选项\\S |题干 )\\S*( \\S*)?")){
-            if((user.getAuthCode()& AuthUtils.ROOT)==0){
-                throw new MpException(ErrorCodeEnum.NO_AUTH);
-            }
-            if(!recentCommit.containsKey(user.getKey()) || recentCommit.get(user.getKey())==null){
-                throw new MpException(ErrorCodeEnum.NO_RECENT_COMMIT_QUIZ);
-            }else{
-                Quiz q = recentCommit.get(user.getKey());
-                if(keyword.startsWith("题干")){
-                    if(keyword.charAt(2)!=' ' && keyword.charAt(2)!=':'){
-                        throw new MpException(ErrorCodeEnum.QUIZ_WRONG_COMMAND);
+                //优先寻找题库中有没有没任何内容的编号,给其分配旧的标签
+                for(String key:quizMap.keySet()){
+                    Quiz quiz = quizMap.get(key);
+                    if(quiz.getBody().equals("") && quiz.getTitle().equals("") && quiz.getOptionList().size()==0){
+                        recentCommit.put(user.getKey(),quiz);//添加新题目时,默认将其作为最近一次提交,方便直接修改
+                        return quiz.toFormatString();
                     }
-                    String content = keyword.substring(3,keyword.length());
-                    q.setBody(content);
+                }
+                Quiz q = new Quiz();
+                q.setLabel("#9999");
+                addQuiz(q);
+                recentCommit.put(user.getKey(),q);//添加新题目时,默认将其作为最近一次提交,方便直接修改
+                return q.toFormatString();
+            }
+            //修改/更新/添加 选项
+            if(keyword.matches("^(选项)?(1|2|3|4|5|一|二|三|四|五)(\\s+\\S+){1,2}")){
+                if(!AuthUtils.isRoot(user.getAuthCode())) {
+                    throw new MpException(ErrorCodeEnum.NO_AUTH);
+                }
+                String[] splitArr = keyword.split("\\s+");
+                int choiceIdx = getOptionNumberInCommand(splitArr[0]);
+                if(!recentCommit.containsKey(user.getKey()) || recentCommit.get(user.getKey())==null){
+                    throw new MpException(ErrorCodeEnum.NO_RECENT_COMMIT_QUIZ);
+                }
+                Quiz q = recentCommit.get(user.getKey());
+                while(choiceIdx>=q.getOptionList().size()){
+                    q.getOptionList().add(new Quiz.Option());
+                }
+                Quiz.Option option = q.getOptionList().get(choiceIdx);
+                if(splitArr.length==2){
+                    //选项一 内容 ==> 如果对应的选项为空,则覆盖选项;否则,给该选项添加新结果
+                    if(splitArr[1].equals("清空")) {
+                        //如果内容是特殊指令:清空,则清空该选项
+                        option.setChoice("");
+                        option.setResult("");
+                    }else if(splitArr[1].equals("广告")){
+                        if(!option.getChoice().startsWith("(广告)")){
+                            option.setChoice("(广告)"+option.getChoice());
+                        }
+                    }else if(option.getChoice()==null || option.getChoice().equals("")) {
+                        option.setChoice(splitArr[1]);
+                    }else {
+                        if(option.getResult()==null || option.getResult().equals("")){
+                            option.setResult(splitArr[1]);
+                        }else{
+                            option.setResult(option.getResult() +'/' + splitArr[1]);
+                        }
+                    }
+                }else if(splitArr.length==3){
+                    //选项一 内容1 内容2 ==> 内容1覆盖选项,内容2覆盖结果
+                    option.setChoice(splitArr[1]);
+                    if(splitArr[2].equals("空") || splitArr[2].equals("清空")) {
+                        splitArr[2] = "";
+                    }
+                    option.setResult(splitArr[2]);
+                }else{
+                    throw new MpException(ErrorCodeEnum.QUIZ_WRONG_COMMAND);
+                }
+                recentCommit.put(user.getKey(),q);//将更新后的quiz提交并更新
+                addQuiz(q);
+                return q.toFormatString();
+            }
+            //修改题干/标题
+            if(keyword.matches("^(题干|标题)\\s+\\S+")){
+                if(!AuthUtils.isRoot(user.getAuthCode())) {
+                    throw new MpException(ErrorCodeEnum.NO_AUTH);
+                }
+                String[] splitArr = keyword.split("\\s+");
+                Quiz q = recentCommit.get(user.getKey());
+                if(splitArr[1].equals("清空")){
+                    splitArr[1] = "";
+                }
+                if(splitArr[0].equals("题干")){
+                    q.setBody(splitArr[1]);
+                }else{
+                    q.setTitle(splitArr[1]);
+                }
+                recentCommit.put(user.getKey(),q);//将更新后的quiz提交并更新
+                addQuiz(q);
+                return q.toFormatString();
+            }
+            //清空指定编号的题
+            if(keyword.matches("^清空 [0-9]{4}$")){
+                if(!AuthUtils.isRoot(user.getAuthCode())) {
+                    throw new MpException(ErrorCodeEnum.NO_AUTH);
+                }
+                String label = '#'+keyword.substring(3,7);
+                if(quizMap.containsKey(label)){
+                    Quiz q = new Quiz();
+                    q.setLabel(label);
                     recentCommit.put(user.getKey(),q);
                     addQuiz(q);
                     return q.toFormatString();
-                }else if(keyword.startsWith("选项")){
-                    char choiceIdx = keyword.charAt(2);
-                    if(choiceIdxMap.containsKey(choiceIdx)){
-                        int idx = choiceIdxMap.get(choiceIdx); //修改的选项编号 ?
-                        String content = keyword.substring(4,keyword.length());
-                        String[] splitArr = content.split(" ");//用单个空格区分
-                        if(splitArr.length==1){
-                            //如果只有一段输入,默认直接添加到answer后边
-                            Quiz.Option opt = q.getOptionList().get(idx);
-                            if(opt.getResult()==null || opt.getResult().equals(""))
-                                opt.setResult(splitArr[0]);
-                            else
-                                opt.setResult(opt.getResult()+'/'+splitArr[0]);
-                        }else if(splitArr.length==2){
-                            //否则视作第一次添加,覆盖该选项的choice,并覆盖answer
-                            List<Quiz.Option> optionList = q.getOptionList();
-                            while(idx>=optionList.size()){
-                                optionList.add(new Quiz.Option());
-                            }
-                            Quiz.Option opt = optionList.get(idx);
-                            opt.setChoice(splitArr[0]);
-                            if(splitArr[1].equals("空") || splitArr[1].equals("空白"))
-                                splitArr[1] = "";
-                            opt.setResult(splitArr[1]);
-                        }else{
-                            throw new MpException(ErrorCodeEnum.QUIZ_WRONG_CHOICE);
-                        }
-                        recentCommit.put(user.getKey(),q);
-                        addQuiz(q);
-                        return q.toFormatString();
-                    }else{
-                        throw new MpException(ErrorCodeEnum.QUIZ_WRONG_COMMAND);
-                    }
+                }else{
+                    return String.format("编号%s 不存在",label);
                 }
             }
-        }
-
-        //以json格式作为输入的,当做更新记录处理
-        if(keyword.startsWith("{\"body\":") && keyword.matches(".*#[0-9]{4}.*")) {
-            if((user.getAuthCode()& AuthUtils.ROOT)==0){
-                throw new MpException(ErrorCodeEnum.NO_AUTH);
-            }
-            String content = "";
-            try{
-                //如果这个语句能顺利执行，说明输入是合法的
-                Quiz quiz = JsonUtils.json2Quiz(keyword);
-                addQuiz(quiz);
-                return String.format("已成功更新一条记录:%s",quiz.getLabel());
-            }catch (Exception e2){
-                throw new MpException(ErrorCodeEnum.QUIZ_ILLEGAL_UPDATE);
-            }
-        }
-        //以# + 四位数字作为输入的,视作请求查看json源码(用作更新记录)
-        if(keyword.matches("#[0-9]{4}")){
-            Integer idx = Integer.parseInt(keyword.substring(1,5));
-            if(quizMap.containsKey(keyword)){
-                return quizMap.get(keyword);
-            }else{
-                throw new MpException(ErrorCodeEnum.QUIZ_UNEXIST_LABEL);
+            throw new MpException(ErrorCodeEnum.UNHANDLED);
+        }catch(MpException me){
+            if(me.getErrorCode()!=ErrorCodeEnum.UNHANDLED.getCode()){
+                throw me;
             }
         }
 
         //否则遍历题库,寻找匹配项
         StringBuffer sb = new StringBuffer();
-        List<String> selected = new ArrayList<>();
+        List<Quiz> selected = new ArrayList<>();
         for(String key:quizMap.keySet()){
-            if(quizMap.get(key).contains(keyword)){
+            if(quizMap.get(key).toJsonString().contains(keyword)){
                 selected.add(quizMap.get(key));
             }
         }
@@ -222,14 +191,13 @@ public class QuizService {
             throw new MpException(ErrorCodeEnum.NO_QUIZ_FOUND);
         }
         if(selected.size()==1){
-            recentCommit.put(user.getKey(),JsonUtils.json2Quiz(selected.get(0)));
+            recentCommit.put(user.getKey(),selected.get(0));
         }else{
             recentCommit.put(user.getKey(),null);
         }
-
         //包装返回结果
         for(int i=0;i<Math.min(LIMITSIZE,selected.size());i++){
-            Quiz qz = JsonUtils.json2Quiz(selected.get(i));
+            Quiz qz = selected.get(i);
             sb.append(qz.toFormatString());
         }
         sb.append(jumplink);//最后添加跳转回游戏的链接
@@ -243,13 +211,23 @@ public class QuizService {
         Integer idx = q.getIndex();
         if(idx==null || idx>=quizMap.size()){
             q.setLabel(quizMap.size());
-            idx = q.getIndex();
         }
-        quizMap.put(q.getLabel(),q.toJsonString());
+        quizMap.put(q.getLabel(),q);
         redisUtils.hset(quizDBKey,q.getLabel(),q.toJsonString());
     }
 
-    public Map<String,String> getQuizMap(){
+    public Map<String,Quiz> getQuizMap(){
         return quizMap;
+    }
+
+    //从诸如"选项1" 等指令中,获取对应的编号或下标
+    private int getOptionNumberInCommand(String str){
+        char ch = str.charAt(str.length()-1);
+        if(ch=='一' || ch=='1')return 0;
+        if(ch=='二' || ch=='2')return 1;
+        if(ch=='三' || ch=='3')return 2;
+        if(ch=='四' || ch=='4')return 3;
+        if(ch=='五' || ch=='5')return 4;
+        throw new MpException(ErrorCodeEnum.QUIZ_WRONG_COMMAND);
     }
 }

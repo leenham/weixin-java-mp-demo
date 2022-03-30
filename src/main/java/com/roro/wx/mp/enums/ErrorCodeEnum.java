@@ -6,9 +6,12 @@ import lombok.Getter;
 public enum ErrorCodeEnum {
     SUCCESS(900000,"成功"),
     RECEIVED(900001,"已接收到请求"),
-    NO_AUTH(900002,"操作权限不足,请联系开发者."),
-    ENDUE_AUTH_FAIL(900003,"授权失败"),
-    USER_UNEXISTED(900004,"该用户不存在"),
+    UNHANDLED(900002,"无法处理该请求"),
+    NO_AUTH(900003,"操作权限不足,请联系开发者."),
+    ENDUE_AUTH_FAIL(900004,"授权失败"),
+    USER_UNEXISTED(900005,"该用户不存在"),
+    SPECIAL_COMMAND_ERROR(900006,"处理特殊指令时发生未知异常"),
+    COMMAND_FORMAT_ERROR(900007,"指令格式错误导致异常"),
     UNKNOWN_ERROR(900099,"系统未知错误"),
 
     /*处理暗号图报错*/
@@ -40,5 +43,11 @@ public enum ErrorCodeEnum {
     ErrorCodeEnum(int code, String desc) {
         this.code = code;
         this.desc = desc;
+    }
+    public boolean equals(ErrorCodeEnum ecode){
+        return this.getCode()==ecode.getCode();
+    }
+    public boolean hashCode(ErrorCodeEnum ecode){
+        return this.getCode()==ecode.getCode();
     }
 }

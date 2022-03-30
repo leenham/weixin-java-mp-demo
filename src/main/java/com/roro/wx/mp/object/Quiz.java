@@ -23,11 +23,13 @@ public class Quiz {
     }
     String body;      //题干
     String label;    //题目编号/标签
+    String title;    //小标题
     List<Option> optionList;
 
     public Quiz(){
         this.optionList = new ArrayList<>();
         this.body = "";
+        this.title = "";
     }
 
     public String toJsonString(){
@@ -37,19 +39,19 @@ public class Quiz {
     //将quiz以便于阅读的形式输出
     public String toFormatString(){
         StringBuffer sb = new StringBuffer();
-        sb.append(String.format("### %04d. ",this.getIndex()));
-        sb.append(this.getBody());sb.append('\n');
+        sb.append(String.format("【%04d.%s】\n",this.getIndex(),this.getTitle()));
+        sb.append("$$ "+this.getBody()+'\n');
         List<Quiz.Option> optionList = this.getOptionList();
         for(int i=0;i<optionList.size();i++){
             Quiz.Option option = this.getOptionList().get(i);
-            sb.append('>'+option.getChoice()+' '+option.getResult()+'\n');
+            sb.append("> "+option.getChoice()+' '+option.getResult()+'\n');
         }
         return sb.toString();
     }
     //测试时用的输出格式
     public String toTestString(){
         StringBuffer sb = new StringBuffer();
-        sb.append(String.format("%04d. ",this.getIndex()));
+        sb.append(String.format("[%s]%04d. ",this.getTitle(),this.getIndex()));
         sb.append(this.getBody());sb.append('\n');
         List<Quiz.Option> optionList = this.getOptionList();
         for(int i=0;i<optionList.size();i++){

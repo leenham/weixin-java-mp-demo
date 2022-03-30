@@ -49,16 +49,18 @@ public class QuizTest {
     @Test
     public void myTest2(){
         //get QUIZ database
-        Map<String,String> quizmap = quizService.getQuizMap();
-        Quiz[] qarr = new Quiz[quizmap.size()];
-        for(String key:quizmap.keySet()){
-            Quiz q = JsonUtils.json2Quiz(quizmap.get(key));
-            qarr[q.getIndex()] = q;
-        }
-        for(int i=0;i<qarr.length;i++){
-            String  text = StringUtils.trimLeadingWhitespace(qarr[i].toTestString());
-            System.out.println(text);
-        }
+        /*Map<String,Quiz> quizMap = quizService.getQuizMap();
+        for(int i=0;i<quizMap.size();i++){
+            String label = String.format("#%04d",i);
+            if(!quizMap.containsKey(label)){
+                System.out.println("不存在key:"+label);
+            }
+            Quiz q = quizMap.get(label);
+            System.out.println(String.format("%d:%s",i,q));
+        }*/
+        Quiz q = new Quiz();
+        q.setLabel("#0125");
+        quizService.addQuiz(q);
     }
 
     @Test

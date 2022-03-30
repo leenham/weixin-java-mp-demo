@@ -75,20 +75,7 @@ public class CipherService {
             log.error("从Redis中读取暗号池时出错.");
         }
     }
-    public String checkCipherAnswer(String text){
-        //符合"答案:四字成语"格式的,被认为是合法输入
-        if(text.matches("答案[\\s,:.]+.*")){
-            String[] arr = text.split("[\\s,:.：]+",2);
-            if(arr.length!=2 || arr[1].length()<2 || arr[1].length()>6){
-                throw new MpException(ErrorCodeEnum.CIPHER_ILLEGAL_ANSWER);
-            }
-            String answer = arr[1];
-            return answer;
-        }else{
-            //不是合法的答案输入,不予处理
-            return null;
-        }
-    }
+
     public void addCipherRecord(Cipher cipher, String answer){
         try {
             cipherTable.put(answer,cipher);

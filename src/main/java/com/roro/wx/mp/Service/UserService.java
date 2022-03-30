@@ -33,8 +33,7 @@ public class UserService {
     Map<String,User> userMap;
     @PostConstruct
     public void init() {
-        if(userMap==null)
-            userMap = new HashMap<>();
+        userMap = new HashMap<>();
         try {
             Set<Object> keyset = redisUtils.hkeys(userTableKey);
             for(Object key:keyset){
