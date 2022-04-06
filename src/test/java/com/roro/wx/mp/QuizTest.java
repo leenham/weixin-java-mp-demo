@@ -7,6 +7,10 @@ import com.roro.wx.mp.object.User;
 import com.roro.wx.mp.utils.AuthUtils;
 import com.roro.wx.mp.utils.JsonUtils;
 import com.roro.wx.mp.utils.RedisUtils;
+import me.chanjar.weixin.common.error.WxErrorException;
+import me.chanjar.weixin.mp.api.WxMpService;
+import me.chanjar.weixin.mp.api.impl.WxMpServiceImpl;
+import me.chanjar.weixin.mp.bean.result.WxMpUser;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -25,24 +29,16 @@ public class QuizTest {
     RedisUtils redisUtils;
     @Autowired
     UserService userService;
+
+    @Autowired
+    WxMpService weixinService;
     @Test
-    public void myTest(){
-        Quiz quiz = new Quiz();
-        quiz.setLabel(2);
-        quiz.setBody("你遇到了一个美丽的女子,她自称是蝴蝶仙子,可以交给你一些秘籍,帮你抓更多蝴蝶");
-        List<Quiz.Option> list = new ArrayList<>();
-        list.add(new Quiz.Option("彬彬有礼,坦然处之","花蝴蝶*5"));
-        list.add(new Quiz.Option("好奇上前一探究竟",""));
-        list.add(new Quiz.Option("越漂亮的女人越危险",""));
-        quiz.setOptionList(list);
-        System.out.println(quiz.toFormatString());
-
-        String json = quiz.toJsonString();
-        System.out.println(json);
-
-        Quiz nquiz = JsonUtils.json2Quiz(json);
-        System.out.println(nquiz);
-        quizService.addQuiz(quiz);
+    public void myTest() throws WxErrorException {
+        String fromUser = "oPTW6580cKPWkS1VJfHn6bcK8QK8";
+        //WxMpService weixinService = new WxMpServiceImpl();
+        //WxMpUser userWxInfo = weixinService.getUserService()
+        //    .userInfo(fromUser, null);
+        //System.out.println(userWxInfo);
         return;
     }
 
@@ -57,9 +53,9 @@ public class QuizTest {
         for(int i=0;i<quizMap.size();i++){
             String label = String.format("#%04d",i);
             Quiz q = quizMap.get(label);
-            System.out.println(q.toFormatString());
+            if(!q.isEmpty())
+                System.out.println(q.toFormatString());
         }
-
     }
 
     @Test
@@ -75,7 +71,8 @@ public class QuizTest {
         String appID = "gh_e14b7dc2719d";
         String ID = "oPTW65675LhREqTvjyMXdjeNvpho";
         User user = userService.getUser(appID,ID);
-        userService.authorize(user, AuthUtils.SUPERROOT);
+        System.out.println(userService.getUserMap().size());
+        //userService.authorize(user, AuthUtils.ROOT);
         System.out.println(user.toTestString());
         System.out.println("授权成功");
 

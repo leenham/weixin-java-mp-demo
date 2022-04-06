@@ -126,4 +126,7 @@ public class Quiz {
         option.setChoice("");
         return;
     }
+    public boolean isEmpty(){
+        return title.equals("") && body.equals("") && (optionList==null || optionList.size()==0);
+    }
 }

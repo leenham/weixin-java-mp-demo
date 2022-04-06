@@ -12,6 +12,7 @@ import com.roro.wx.mp.object.User;
  */
 
 public class AuthUtils {
+    public final static int NAIVE = 0;
     public final static int SUPERROOT = 1;
     public final static int ROOT = 1<<1;
     public final static int BLACKLIST = 1<<2;

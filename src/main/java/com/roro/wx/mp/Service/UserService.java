@@ -57,7 +57,7 @@ public class UserService {
     }
 
     public void authorize(User user,int authCode){
-        user.setAuthCode(user.getAuthCode() | authCode);
+        user.setAuthCode(authCode);
         userMap.put(user.getKey(),user);
         redisUtils.hset(userTableKey,user.getKey(),JsonUtils.user2Json(user));
         return;

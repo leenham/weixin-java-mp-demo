@@ -151,7 +151,7 @@ public class QuizService {
                 }
             }
             //给指定选项 清空 或者 添加广告标志
-            if(keyword.matches("^(清空|广告)\\s+(1|2|3|4|5|一|二|三|四|五)")){
+            if(keyword.matches("^(清空|广告)\\s+(1|2|3|4|5|一|二|三|四|五)$")){
                 if(!AuthUtils.isRoot(user.getAuthCode())) {
                     throw new MpException(ErrorCodeEnum.NO_AUTH);
                 }
@@ -162,6 +162,9 @@ public class QuizService {
                 int choiceIdx = getOptionNumberInCommand(splitArr[1]);
                 Quiz q = recentCommit.get(user.getKey());
                 q.setOption(choiceIdx,splitArr[0]);
+                recentCommit.put(user.getKey(),q);//将更新后的quiz提交并更新
+                addQuiz(q);
+                return q.toFormatString();
             }
             throw new MpException(ErrorCodeEnum.UNHANDLED);
         }catch(MpException me){
@@ -192,7 +195,7 @@ public class QuizService {
             Quiz qz = selected.get(i);
             sb.append(qz.toFormatString());
         }
-        sb.append(jumplink);//最后添加跳转回游戏的链接
+        //sb.append(jumplink);//最后添加跳转回游戏的链接
         return sb.toString();
     }
 

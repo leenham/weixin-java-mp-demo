@@ -23,5 +23,4 @@ public class UnsubscribeHandler extends AbstractHandler {
         // TODO 可以更新本地数据库为取消关注状态
         return null;
     }
-
 }

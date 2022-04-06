@@ -17,6 +17,7 @@ import me.chanjar.weixin.mp.api.WxMpService;
 import me.chanjar.weixin.mp.bean.message.WxMpXmlMessage;
 import me.chanjar.weixin.mp.bean.message.WxMpXmlOutMessage;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -37,6 +38,8 @@ public class MsgHandler extends AbstractHandler {
     CipherService cipherService;
     @Autowired
     QuizService quizService;
+    @Value("${roconfig.appId}")
+    String roAppId;
 
     @Override
     public WxMpXmlOutMessage handle(WxMpXmlMessage wxMessage,
@@ -46,27 +49,31 @@ public class MsgHandler extends AbstractHandler {
         if (!wxMessage.getMsgType().equals(XmlMsgType.EVENT)) {
             //TODO 可以选择将消息保存到本地
         }
+
         String msgType = wxMessage.getMsgType();
         String reply = "";
         try{
-            if(msgType.equals("text")){
-                reply = handleText(wxMessage);
-            }else if(msgType.equals("image")){
-                reply = handleImage(wxMessage);
+            User user = userService.getUser(wxMessage.getToUser(),wxMessage.getFromUser());
+            if(AuthUtils.isBlackList(user.getAuthCode())){
+                //拒绝让黑名单用户访问
+                throw new MpException(ErrorCodeEnum.DENY_BLACKLIST_USER);
             }
-
+            if(msgType.equals("text")){
+                reply = handleText(user,wxMessage);
+            }else if(msgType.equals("image")){
+                reply = handleImage(user,wxMessage);
+            }
             return new TextBuilder().build(reply, wxMessage, weixinService);
         }catch(MpException e){
-            return new TextBuilder().build(String.format("%s(错误码:%d)",e.getErrorMsg(),e.getErrorCode()), wxMessage, weixinService);
+            return new TextBuilder().build(String.format("%s",e.getErrorMsg()), wxMessage, weixinService);
         }catch(Exception e){
             return new TextBuilder().build("系统发生未知故障.", wxMessage, weixinService);
         }
     }
 
     //处理文本类的消息
-    private String handleText(WxMpXmlMessage wxMessage){
+    private String handleText(User user,WxMpXmlMessage wxMessage){
         String keyword = wxMessage.getContent().trim();//去除首尾的空格
-        User user = userService.getUser(wxMessage.getToUser(),wxMessage.getFromUser());
         try{
             return handleSpecialCommand(user,keyword);
         }catch(MpException e){
@@ -96,15 +103,15 @@ public class MsgHandler extends AbstractHandler {
             return "刷新成功";
         }
         //授权 appID ID authCode 给指定用户赋予管理员权限,该权限可用于提交在线修改指令
-        if(keyword.matches("^授权 \\S* \\S* [0-9]+$")){
+        if(keyword.matches("^授权\\s+\\S+\\s+[0-9]+$")){
             //只有超级管理员,也就是我自己才能随意赋权. 对于授权码的格式,就不做限制了,我自己知道怎么攻击自己(ૢ˃ꌂ˂ૢ)
             if((user.getAuthCode()& AuthUtils.SUPERROOT)==0)
                 throw new MpException(ErrorCodeEnum.NO_AUTH);
             try {
-                String[] arr = keyword.split(" ");
-                String appID = arr[1];
-                String ID = arr[2];
-                int authCode = Integer.valueOf(arr[3]);
+                String[] arr = keyword.split("\\s+");
+                String appID = roAppId;
+                String ID = arr[1];
+                int authCode = Integer.valueOf(arr[2]);
                 if(!userService.hasUser(appID,ID)){
                     throw new MpException(ErrorCodeEnum.USER_UNEXISTED);
                 }else{
@@ -136,11 +143,10 @@ public class MsgHandler extends AbstractHandler {
     }
     //处理图片类的消息
 
-    private String handleImage(WxMpXmlMessage wxMessage){
+    private String handleImage(User user,WxMpXmlMessage wxMessage){
         try {
-            return handleImageAsCipher(wxMessage);
+            return handleImageAsCipher(user,wxMessage);
         }catch (MpException me){
-            User user = userService.getUser(wxMessage.getToUser(),wxMessage.getFromUser());
             //提交图片过程中发生异常,则清空最近一次提交,防止用户无意间修改了答案
             cipherService.clearRecentCommit(user);
             if(me.getErrorCode()== ErrorCodeEnum.CIPHER_ILLEGAL_PIC.getCode() ||
@@ -157,8 +163,7 @@ public class MsgHandler extends AbstractHandler {
         /* TODO:其他处理图片输入的逻辑 */
     }
     //默认将图片消息当做暗号图处理.
-    private String handleImageAsCipher(WxMpXmlMessage wxMessage) {
-        User user = userService.getUser(wxMessage.getToUser(),wxMessage.getFromUser());
+    private String handleImageAsCipher(User user,WxMpXmlMessage wxMessage) {
         Cipher c = cipherService.url2Cipher(wxMessage.getPicUrl());
         String result = cipherService.retrieval(user,c);
         if(result==null || result.equals("")){

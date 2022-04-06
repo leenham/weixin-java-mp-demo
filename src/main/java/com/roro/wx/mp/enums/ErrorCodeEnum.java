@@ -12,6 +12,7 @@ public enum ErrorCodeEnum {
     USER_UNEXISTED(900005,"该用户不存在"),
     SPECIAL_COMMAND_ERROR(900006,"处理特殊指令时发生未知异常"),
     COMMAND_FORMAT_ERROR(900007,"指令格式错误导致异常"),
+    DENY_BLACKLIST_USER(900008,"您已被列入黑名单,无法使用功能,请联系开发者解除."),
     UNKNOWN_ERROR(900099,"系统未知错误"),
 
     /*处理暗号图报错*/
