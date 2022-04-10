@@ -56,15 +56,15 @@ public class SubscribeHandler extends AbstractHandler {
         }
 
         try {
-
             String appId = wxMessage.getToUser();
             String Id = wxMessage.getFromUser();
             String content = "";
             //判断是否是回头客用户,如果已经存在于我的用户表里,说明就是老用户
             if(userService.hasUser(appId,Id)){
-                content = "感谢您再次关注~";
+                content = "非常荣幸得到您的再次关注~";
+            }else {
+                content = String.format("> 感谢关注~当前功能有:\n1.将官方暗号图发送至公众号(保存原图,不要截图),可检索答案\n2.抓蝴蝶答题检索服务已下线.\n3.已接入微信官方闲聊服务,尚在测试");
             }
-            content = String.format("> 感谢关注~当前功能有:\n1.将官方暗号图发送至公众号(保存原图,不要截图),可检索答案\n2.输入赏春踏青答题活动关键词,获得题目信息\n");
             return new TextBuilder().build(content, wxMessage, weixinService);
         } catch (Exception e) {
             this.logger.error(e.getMessage(), e);

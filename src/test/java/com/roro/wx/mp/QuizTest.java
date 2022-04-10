@@ -35,10 +35,13 @@ public class QuizTest {
     WxMpService weixinService;
     @Test
     public void myTest() throws WxErrorException {
-        Map<String,Quiz> quizMap = quizService.getQuizMap();
-        for(int i=0;i<quizMap.size();i++){
-            String key = String.format("#%04d",i);
-            System.out.println(quizMap.get(key).toFormatString());
+        Map<String,User> userMap = userService.getUserMap();
+        for(String key:userMap.keySet()){
+            //String key = String.format("#%04d",i);
+            User user = userMap.get(key);
+            user.setStatus(1);
+            userService.updateUser(user);
+            System.out.println(String.format("%s:%02d",user.getID(),user.getStatus()));
         }
         return;
     }

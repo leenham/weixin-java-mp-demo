@@ -20,6 +20,8 @@ public class User {
     public User(String _appID,String _ID){
         this.appID = _appID;
         this.ID = _ID;
+        this.status = 0;
+        this.name = "";
     }
     public String getKey(){
         return appID+ID;

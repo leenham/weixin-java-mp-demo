@@ -65,6 +65,11 @@ public class UserService {
     public boolean hasUser(String appID,String ID){
         return userMap.containsKey(appID+ID);
     }
+    public void updateUser(User user){
+        userMap.put(user.getKey(),user);
+        redisUtils.hset(userTableKey,user.getKey(),JsonUtils.user2Json(user));
+        return;
+    }
     public Map<String,User> getUserMap(){
         return userMap;
     }

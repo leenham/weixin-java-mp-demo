@@ -60,7 +60,13 @@ public class MsgHandler extends AbstractHandler {
             }else if(msgType.equals("image")){
                 reply = handleImage(user,wxMessage);
             }
-            return new TextBuilder().build(reply, wxMessage, weixinService);
+            if(reply.equals("")){
+                //此处返回值为null,在上层代码会进行判断,并最终返回空字符串(即不做任何回复
+                //如果直接返回content为""的结果,公众号会显示故障.
+                return null;
+            }else {
+                return new TextBuilder().build(reply, wxMessage, weixinService);
+            }
         }catch(MpException e){
             return new TextBuilder().build(String.format("%s",e.getErrorMsg()), wxMessage, weixinService);
         }catch(Exception e){
@@ -79,8 +85,20 @@ public class MsgHandler extends AbstractHandler {
                 throw e;//如果已经受理但是还是报错,那么就把这个错误向外抛.
             }
         }
+        String reply = "";
         //否则当做答题检索功能处理.
-        String reply = quizService.retrieval(user,keyword);
+        //reply = quizService.retrieval(user,keyword);
+        /*活动下线,不再处理检索相关功能;仅第一次输入通知活动下线,之后不再提醒.
+        * 已将数据库中当前所有用户的status刷为1,新用户默认status是0
+        * 只有当前数据库中的用户会受到活动下线提示.
+        * */
+        if(user.getStatus().equals(1)){
+            reply = String.format("抓蝴蝶活动现已下线.闲聊功能尚在测试中,欢迎调戏~");
+            user.setStatus(0);
+            userService.updateUser(user);
+        }else{
+            reply = "";//自动接入的闲聊系统会再回复,此处不要回复即可.
+        }
         return reply;
     }
     //处理一些特殊的指令
