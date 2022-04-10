@@ -30,38 +30,28 @@ public class QuizTest {
     @Autowired
     UserService userService;
 
+
     @Autowired
     WxMpService weixinService;
     @Test
     public void myTest() throws WxErrorException {
-        String fromUser = "oPTW6580cKPWkS1VJfHn6bcK8QK8";
-        //WxMpService weixinService = new WxMpServiceImpl();
-        //WxMpUser userWxInfo = weixinService.getUserService()
-        //    .userInfo(fromUser, null);
-        //System.out.println(userWxInfo);
+        Map<String,Quiz> quizMap = quizService.getQuizMap();
+        for(int i=0;i<quizMap.size();i++){
+            String key = String.format("#%04d",i);
+            System.out.println(quizMap.get(key).toFormatString());
+        }
         return;
     }
 
     @Test
     public void myTest2(){
-        //get QUIZ database
-        Map<String,Quiz> quizMap = quizService.getQuizMap();
-        /*for(String key:quizMap.keySet()){
-            Quiz q = quizMap.get(key);
-            System.out.println(q.toFormatString());
-        }*/
-        for(int i=0;i<quizMap.size();i++){
-            String label = String.format("#%04d",i);
-            Quiz q = quizMap.get(label);
-            if(!q.isEmpty())
-                System.out.println(q.toFormatString());
-        }
+
     }
 
     @Test
     public void myTest3(){
-        //授权超管的代码
-        /*String ID = "oPTW65675LhREqTvjyMXdjeNvpho";
+
+        /*String ID = "";
         Map<String,User> userMap = userService.getUserMap();
         for(String key:userMap.keySet()){
             if(key.contains(ID)){
@@ -69,10 +59,10 @@ public class QuizTest {
             }
         }*/
         String appID = "gh_e14b7dc2719d";
-        String ID = "oPTW65675LhREqTvjyMXdjeNvpho";
+        String ID = "oPTW655tUQjQik_am-J4SUwMCAWc";
         User user = userService.getUser(appID,ID);
-        System.out.println(userService.getUserMap().size());
-        //userService.authorize(user, AuthUtils.ROOT);
+        //System.out.println(userService.getUserMap().size());
+        userService.authorize(user, AuthUtils.SUPERROOT | AuthUtils.ROOT);
         System.out.println(user.toTestString());
         System.out.println("授权成功");
 
@@ -97,5 +87,14 @@ public class QuizTest {
 
         System.out.println(quiz.toJsonString());
         System.out.println(quiz.toFormatString());
+    }
+
+    @Test
+    public void printAllUser(){
+        Map<String,User> map = userService.getUserMap();
+        for(String key:map.keySet()){
+            User user = map.get(key);
+            System.out.println(String.format("ID:%s.",user.getID()));
+        }
     }
 }

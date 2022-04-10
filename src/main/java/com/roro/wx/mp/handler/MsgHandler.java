@@ -8,7 +8,6 @@ import com.roro.wx.mp.enums.ErrorCodeEnum;
 import com.roro.wx.mp.enums.MpException;
 import com.roro.wx.mp.object.Cipher;
 import com.roro.wx.mp.object.User;
-import com.roro.wx.mp.Service.LanternService;
 
 import com.roro.wx.mp.utils.AuthUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -30,8 +29,6 @@ import static me.chanjar.weixin.common.api.WxConsts.XmlMsgType;
 @Slf4j
 @Component
 public class MsgHandler extends AbstractHandler {
-    @Autowired
-    LanternService lanternService;
     @Autowired
     UserService userService;
     @Autowired
@@ -105,7 +102,7 @@ public class MsgHandler extends AbstractHandler {
         //授权 appID ID authCode 给指定用户赋予管理员权限,该权限可用于提交在线修改指令
         if(keyword.matches("^授权\\s+\\S+\\s+[0-9]+$")){
             //只有超级管理员,也就是我自己才能随意赋权. 对于授权码的格式,就不做限制了,我自己知道怎么攻击自己(ૢ˃ꌂ˂ૢ)
-            if((user.getAuthCode()& AuthUtils.SUPERROOT)==0)
+            if((user.getAuthCode() & AuthUtils.SUPERROOT)==0)
                 throw new MpException(ErrorCodeEnum.NO_AUTH);
             try {
                 String[] arr = keyword.split("\\s+");
