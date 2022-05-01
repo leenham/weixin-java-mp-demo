@@ -17,4 +17,14 @@ public class GrammerTest {
         System.out.println(keyword.matches(reg));
 
     }
+    @Test
+    public void checkReplace(){
+        String answer = "丧131心病狂";
+        if(answer.matches(".*[0-9]")){
+            //如果以0-9数字结尾,则视作备选答案,以增加命中概率,但是需要把末位数字对外隐藏
+            //故在输出之前做处理.
+            answer = answer.replaceAll("[0-9]","ww");
+        }
+        System.out.println(answer);
+    }
 }

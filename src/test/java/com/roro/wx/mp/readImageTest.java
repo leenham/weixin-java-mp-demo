@@ -107,9 +107,13 @@ public class readImageTest {
     public void checkCHP() throws IOException {
         HashMap<String,Cipher> map = cipherService.getCipherTable();
         //TestUtils.checkDatabase(map);
+        int idx = 0;
         for(String key:map.keySet()){
             BufferedImage img = ImageIO.read(new URL(map.get(key).getUrl()));
             ImageUtils.write(img,"jpg",String.format("cipher/%s.jpg",key));
+            //System.out.println(String.format("Load image:...%d",++idx));
         }
     }
+
+
 }
