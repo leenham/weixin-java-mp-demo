@@ -10,6 +10,7 @@ import com.roro.wx.mp.object.Cipher;
 import com.roro.wx.mp.object.User;
 
 import com.roro.wx.mp.utils.AuthUtils;
+import com.roro.wx.mp.utils.ImageUtils;
 import lombok.extern.slf4j.Slf4j;
 import me.chanjar.weixin.common.session.WxSessionManager;
 import me.chanjar.weixin.mp.api.WxMpService;
@@ -19,6 +20,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.awt.image.BufferedImage;
+import java.net.URL;
 import java.util.Map;
 
 import static me.chanjar.weixin.common.api.WxConsts.XmlMsgType;
@@ -105,7 +108,8 @@ public class MsgHandler extends AbstractHandler {
     private String handleSpecialCommand(User user,String keyword){
         /* 允许他们自行查看自己的appID和ID,这样方便我将他们和具体的人对应起来*/
         if(keyword.equals("#查看信息")){
-            return String.format("appID:%s\nID:%s\n权限码:%x",user.getAppID(),user.getID(),user.getAuthCode());
+            String authDesc = AuthUtils.getAuthDesc(user.getAuthCode());
+            return String.format("appID:%s\nID:%s\nauthCode:%s",user.getAppID(),user.getID(),authDesc);
         }
         /* 方便我在线将内存中的表和数据库进行同步*/
         if(keyword.equals("#刷新")){
@@ -117,7 +121,7 @@ public class MsgHandler extends AbstractHandler {
             quizService.init();
             return "刷新成功";
         }
-        //授权 appID ID authCode 给指定用户赋予管理员权限,该权限可用于提交在线修改指令
+        //"授权 appID ID authCode" 给指定用户赋予管理员权限,该权限可用于提交在线修改指令
         if(keyword.matches("^授权\\s+\\S+\\s+[0-9]+$")){
             //只有超级管理员,也就是我自己才能随意赋权. 对于授权码的格式,就不做限制了,我自己知道怎么攻击自己(ૢ˃ꌂ˂ૢ)
             if((user.getAuthCode() & AuthUtils.SUPERROOT)==0)
@@ -141,16 +145,25 @@ public class MsgHandler extends AbstractHandler {
                 throw new MpException(ErrorCodeEnum.SPECIAL_COMMAND_ERROR);
             }
         }
-        //处理 答案:四字成语 格式的输入,视作更新暗号图的答案
+        //处理 答案:四字成语 格式的输入,视作更新暗号图的答案,管理员才能修改
         if(keyword.matches("答案[\\s,:.]+.*")){
+            if(!AuthUtils.isRoot(user.getAuthCode())) {
+                throw new MpException(ErrorCodeEnum.NO_AUTH);
+            }
             String[] arr = keyword.split("[\\s,:.：]+",2);
-            if(arr.length!=2 || arr[1].length()<2 || arr[1].length()>6){
+            if(arr.length!=2 || arr[1].length()<2 || arr[1].length()>=6){
                 throw new MpException(ErrorCodeEnum.CIPHER_ILLEGAL_ANSWER);
             }
             String answer = arr[1];
             //读取该用户最近一次提交的暗号图，并更新暗号池
             Cipher cipher = cipherService.getRecentCommit(user);
             cipherService.addCipherRecord(cipher,answer);
+            //更新的同时,将图片保存到服务器
+            try {
+                ImageUtils.write(ImageUtils.read(cipher.getUrl()),String.format("cipher/%s.jpg",answer));
+            }catch(Exception e){
+                throw new MpException(ErrorCodeEnum.FAIL_ADD_NEW_CIPHER);
+            }
             return String.format("已成功更新暗号池：%s",answer);
         }
         //默认会报未处理该消息的异常

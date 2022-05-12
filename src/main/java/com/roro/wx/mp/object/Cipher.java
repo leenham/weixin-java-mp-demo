@@ -9,7 +9,7 @@ import lombok.Data;
 @Data
 public class Cipher{
     private String url;
-    private int[] feature; // 取局部图片的像素值作为特征
+    private int[] feature;
     public Cipher(String _url,int[] _feature){
         this.url = _url;
         this.feature = _feature;

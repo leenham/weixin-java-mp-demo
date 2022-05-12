@@ -99,8 +99,8 @@ public class readImageTest {
 
     @Test
     public void ciphertest() throws IOException {
-        BufferedImage image = ImageIO.read(new File("xiaoqiao.png"));
-        System.out.println(ImageUtils.parseQRCode(image));
+        //BufferedImage image = ImageIO.read(new File("xiaoqiao.png"));
+        //System.out.println(ImageUtils.parseQRCode(image));
     }
 
     @Test
@@ -113,6 +113,26 @@ public class readImageTest {
             ImageUtils.write(img,"jpg",String.format("cipher/%s.jpg",key));
             //System.out.println(String.format("Load image:...%d",++idx));
         }
+    }
+
+    @Test
+    public void deleteCipherMap(){
+        //删除特定的键值
+        HashMap<String,Cipher> map = cipherService.getCipherTable();
+        System.out.println(String.format("当前暗号池大小:%d",map.size()));
+        cipherService.deleteCipherRecord("白手期间");
+        cipherService.deleteCipherRecord("星火燎原2");
+        cipherService.deleteCipherRecord("星火燎原3");
+        cipherService.deleteCipherRecord("星火燎原4");
+        cipherService.deleteCipherRecord("星火燎原5");
+        cipherService.deleteCipherRecord("旁观者清2");
+        cipherService.deleteCipherRecord("旁观者清3");
+        cipherService.deleteCipherRecord("旁观者清4");
+
+        map = cipherService.getCipherTable();
+        System.out.println(String.format("当前暗号池大小:%d",map.size()));
+
+        return;
     }
 
 

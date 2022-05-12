@@ -63,7 +63,7 @@ public class SubscribeHandler extends AbstractHandler {
             if(userService.hasUser(appId,Id)){
                 content = "非常荣幸得到您的再次关注~";
             }else {
-                content = String.format("> 感谢关注~当前功能有:\n1.将官方暗号图发送至公众号(保存原图,不要截图),可检索答案\n2.抓蝴蝶答题检索服务已下线.\n3.已接入微信官方闲聊服务,尚在测试");
+                content = String.format("> 感谢关注~当前功能有:\n1.将官方暗号图发送至公众号(保存原图,不要截图),可检索答案\n2.抓蝴蝶答题检索服务已下线.");
             }
             return new TextBuilder().build(content, wxMessage, weixinService);
         } catch (Exception e) {

@@ -30,6 +30,9 @@ public class RedisUtils {
     public Set<Object> hkeys(String key){
         return redisTemplate.opsForHash().keys(key);
     }
+    public void hdel(String key,Object hashkey){
+        redisTemplate.opsForHash().delete(key,hashkey);
+    }
     public boolean hexists(String key,Object hashkey){
         return redisTemplate.opsForHash().hasKey(key,hashkey);
     }

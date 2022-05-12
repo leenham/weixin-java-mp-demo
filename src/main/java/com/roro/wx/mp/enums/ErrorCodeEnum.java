@@ -18,14 +18,16 @@ public enum ErrorCodeEnum {
     /*处理暗号图报错*/
     CIPHER_ILLEGAL_ANSWER(900101,"暗号图答案格式异常"),
     CIPHER_ILLEGAL_PIC(900102,"读取暗号图失败,请发送官方暗号图原图"),
-    CIPHER_WITHOUT_QRCODE(900103,"图片指定区域内未能检测出二维码"),
+    CIPHER_WITHOUT_QRCODE(900103,"图片指定区域内未能检测出二维码,请保存原图后再次发送,不要使用手机截图"),
     CIPHER_WRONG_QRCODE(900104,"检测出不属于暗号图的二维码"),
     NO_COMMIT_CIPHER(900105,"请先上传暗号图,再输入答案"),
     RECENT_CIPHER_ERROR(900106,"最近一次提交的暗号图异常,请上传官方原图后再输入答案"),
     CIPHER_RETRIVAL_ERROR(900107,"检索暗号图时发生异常"),
     FAIL_UPDATE_CIPHER_POOL(900108,"更新暗号池时发生异常"),
     UNABLE_RESOLVE_CIPHER(900109,"无法处理该暗号图"),
-    CIPHER_SMALL_SIZE(900110,"图片尺寸太小,请发送官方暗号图原图"),
+    CIPHER_SMALL_SIZE(900110,"图片尺寸太小,请保存暗号图原图(而非截图)后再发送"),
+    FAIL_ADD_NEW_CIPHER(900111,"保存新暗号图时发生异常,请联系开发人员"),
+    FAIL_DEL_CIPHER(900112,"试图删除暗号图时出错,请联系开发人员"),
     CIPHER_UNKNOWN_ERROR(900199, "处理暗号图时未知异常"),
 
     /*处理答题报错*/

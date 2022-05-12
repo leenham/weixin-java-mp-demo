@@ -5,18 +5,24 @@ import com.google.zxing.client.j2se.BufferedImageLuminanceSource;
 import com.google.zxing.common.HybridBinarizer;
 import com.roro.wx.mp.enums.ErrorCodeEnum;
 import com.roro.wx.mp.enums.MpException;
-import lombok.Getter;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferByte;
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
 public class ImageUtils {
+    public static BufferedImage read(String filename) throws IOException {
+        if(filename.endsWith(".jpg") || filename.endsWith(".png"))
+            return ImageIO.read(new File(filename));
+        if(filename.startsWith("http"))
+            return ImageIO.read(new URL(filename));
+        throw new IOException();
+    }
     public static BufferedImage resize(BufferedImage originalImage, int targetWidth, int targetHeight) {
         try {
             BufferedImage resizedImage = new BufferedImage(targetWidth, targetHeight, BufferedImage.TYPE_INT_RGB);
@@ -90,9 +96,15 @@ public class ImageUtils {
     public static void write(BufferedImage img, String format, String filename) throws IOException {
         ImageIO.write(img,format,new File(filename));
     }
+    public static void write(BufferedImage img,String filename) throws IOException{
+        String[] splitArr = filename.split("\\.");
+        if(splitArr.length!=2)return;
+        String defaultFormat = splitArr[1];
+        write(img,defaultFormat,filename);
+    }
     public static void write(BufferedImage img) throws IOException {
-        String defaultFormat = "png";
-        String defaultFilename = "output.png";
+        String defaultFormat = "jpg";
+        String defaultFilename = "output.jpg";
         ImageIO.write(img,defaultFilename,new File(defaultFilename));
     }
     public static BufferedImage truncate(BufferedImage img, int top,int right,int bottom,int left){

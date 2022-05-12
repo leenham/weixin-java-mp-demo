@@ -17,6 +17,7 @@ public class AuthUtils {
     public final static int ROOT = 1<<1;
     public final static int BLACKLIST = 1<<2;
 
+
     public static boolean isRoot(int authCode){
         return (authCode & ROOT)>0 || (authCode & SUPERROOT)>0;
     }
@@ -26,5 +27,16 @@ public class AuthUtils {
     public static boolean isBlackList(int authCode){
         return (authCode & BLACKLIST)>0;
     }
-
+    public static String getAuthDesc(int authCode){
+        if(isSuperRoot(authCode)){
+            return "超管";
+        }
+        if(isRoot(authCode)){
+            return "管理员";
+        }
+        if(isBlackList(authCode)){
+            return "黑名单";
+        }
+        return "普通用户";
+    }
 }

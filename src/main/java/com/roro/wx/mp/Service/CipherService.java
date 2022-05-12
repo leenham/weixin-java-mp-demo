@@ -154,9 +154,9 @@ public class CipherService {
                 break OUTER;
             }
             commitTable.put(user.getKey(),cipher);
-            if(answer.matches(".*[0-9]")){
+            if(!AuthUtils.isSuperRoot(user.getAuthCode()) && answer.matches(".*[0-9]")){
                 //如果以0-9数字结尾,则视作备选答案,以增加命中概率,但是需要把末位数字对外隐藏
-                //故在输出之前做处理.
+                //故在输出之前做处理. 超管可以直接看到原答案,以便在出错时进行覆盖处理
                 answer = answer.replaceAll("[0-9]","");
             }
             return answer;
@@ -189,5 +189,17 @@ public class CipherService {
     }
     public HashMap<String,Cipher> getCipherTable(){
         return this.cipherTable;
+    }
+    /**
+     * 提供删除暗号图哈希表的方法,但不对外开放,用于自己动态调整.
+     */
+    public void deleteCipherRecord(String answer){
+        try {
+            cipherTable.remove(answer);
+            redisUtils.hdel(cipherTableKey, answer);
+        }catch (Exception e){
+            log.error(String.format("试图删除暗号:%s时出错",answer));
+            throw new MpException(ErrorCodeEnum.FAIL_UPDATE_CIPHER_POOL);
+        }
     }
 }
