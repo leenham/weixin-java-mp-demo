@@ -4,6 +4,7 @@ import java.util.Map;
 
 import com.roro.wx.mp.Service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.roro.wx.mp.builder.TextBuilder;
@@ -22,6 +23,9 @@ import me.chanjar.weixin.mp.bean.result.WxMpUser;
 public class SubscribeHandler extends AbstractHandler {
     @Autowired
     UserService userService;
+
+    @Value(value="${roconfig.string.subscribe}")
+    public String subscribeStr;
 
     @Override
     public WxMpXmlOutMessage handle(WxMpXmlMessage wxMessage,
@@ -63,7 +67,7 @@ public class SubscribeHandler extends AbstractHandler {
             if(userService.hasUser(appId,Id)){
                 content = "非常荣幸得到您的再次关注~";
             }else {
-                content = String.format("> 感谢关注~当前功能有:\n1.将官方暗号图发送至公众号(保存原图,不要截图),可检索答案\n2.抓蝴蝶答题检索服务已下线.");
+                content = String.format(subscribeStr);
             }
             return new TextBuilder().build(content, wxMessage, weixinService);
         } catch (Exception e) {

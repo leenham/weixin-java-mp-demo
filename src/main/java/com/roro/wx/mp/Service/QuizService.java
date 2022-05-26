@@ -25,7 +25,7 @@ public class QuizService {
     @Value(value="${link.jump.yingxiongsha}")
     public String jumplink;
 
-    @Value(value="${roconfig.quiz.butterfly}")
+    @Value(value="${roconfig.quiz.dragonboat}")
     public String quizDBKey;  //存储当前题库的哈希表所对应的键值
 
     @Autowired
@@ -49,7 +49,7 @@ public class QuizService {
             }
             return;
         }catch(Exception e){
-            log.error("从Redis中读取赏春踏青活动题库时出错.");
+            log.error("从Redis中读取答题活动题库时出错.");
         }
     }
     //返回结果超过这个值,会导致响应过慢,而无法响应.已知7条时会不予响应.

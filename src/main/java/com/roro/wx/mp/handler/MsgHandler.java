@@ -22,6 +22,10 @@ import org.springframework.stereotype.Component;
 
 import java.awt.image.BufferedImage;
 import java.net.URL;
+import java.time.LocalDateTime;
+import java.time.Month;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.Map;
 
 import static me.chanjar.weixin.common.api.WxConsts.XmlMsgType;
@@ -95,10 +99,9 @@ public class MsgHandler extends AbstractHandler {
         * 已将数据库中当前所有用户的status刷为1,新用户默认status是0
         * 只有当前数据库中的用户会受到活动下线提示.
         * */
-        if(user.getStatus().equals(1)){
-            reply = String.format("抓蝴蝶活动现已下线.闲聊功能尚在测试中,欢迎调戏~");
-            user.setStatus(0);
-            userService.updateUser(user);
+        LocalDateTime now = LocalDateTime.now();
+        if(AuthUtils.isRoot(user) || now.getMonth().compareTo(Month.MAY)>0){
+            reply = quizService.retrieval(user,keyword);
         }else{
             reply = "";//自动接入的闲聊系统会再回复,此处不要回复即可.
         }

@@ -21,11 +21,20 @@ public class AuthUtils {
     public static boolean isRoot(int authCode){
         return (authCode & ROOT)>0 || (authCode & SUPERROOT)>0;
     }
+    public static boolean isRoot(User user){
+        return isRoot(user.getAuthCode());
+    }
     public static boolean isSuperRoot(int authCode){
         return (authCode & SUPERROOT)>0;
     }
+    public static boolean isSuperRoot(User user){
+        return isSuperRoot(user.getAuthCode());
+    }
     public static boolean isBlackList(int authCode){
         return (authCode & BLACKLIST)>0;
+    }
+    public static boolean isBlackList(User user){
+        return isBlackList(user.getAuthCode());
     }
     public static String getAuthDesc(int authCode){
         if(isSuperRoot(authCode)){

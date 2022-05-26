@@ -2,6 +2,9 @@ package com.roro.wx.mp;
 
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDateTime;
+import java.time.Month;
+
 public class GrammerTest {
     @Test
     public void test(){
@@ -26,5 +29,14 @@ public class GrammerTest {
             answer = answer.replaceAll("[0-9]","ww");
         }
         System.out.println(answer);
+    }
+    @Test
+    public void datetest(){
+        LocalDateTime now = LocalDateTime.now();
+        System.out.println(now);
+        System.out.println(now.getDayOfMonth());
+        System.out.println(now.getDayOfYear());
+        System.out.println(now.getMonth().compareTo(Month.JULY));
+        System.out.println(now.getYear());
     }
 }

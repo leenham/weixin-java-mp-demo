@@ -120,18 +120,10 @@ public class readImageTest {
         //删除特定的键值
         HashMap<String,Cipher> map = cipherService.getCipherTable();
         System.out.println(String.format("当前暗号池大小:%d",map.size()));
-        cipherService.deleteCipherRecord("白手期间");
-        cipherService.deleteCipherRecord("星火燎原2");
-        cipherService.deleteCipherRecord("星火燎原3");
-        cipherService.deleteCipherRecord("星火燎原4");
-        cipherService.deleteCipherRecord("星火燎原5");
-        cipherService.deleteCipherRecord("旁观者清2");
-        cipherService.deleteCipherRecord("旁观者清3");
-        cipherService.deleteCipherRecord("旁观者清4");
-
+        cipherService.deleteCipherRecord("人定胜天");
+        cipherService.deleteCipherRecord("人定胜天 ");
         map = cipherService.getCipherTable();
         System.out.println(String.format("当前暗号池大小:%d",map.size()));
-
         return;
     }
 
