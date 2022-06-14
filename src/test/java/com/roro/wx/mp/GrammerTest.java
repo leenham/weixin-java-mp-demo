@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
 import java.time.Month;
+import java.util.Scanner;
 
 public class GrammerTest {
     @Test
@@ -11,13 +12,20 @@ public class GrammerTest {
         String keyword1 = "授权 gh_e14b7dc2719d oPTW655tUQjQik_am-J4SUwMCAWc";
         System.out.println(keyword1.matches("^授权 \\S* \\S*$"));
     }
-
     @Test
     public void regTest(){
         //String reg = "(选项)?(1|2|3|4|5|一|二|三|四|五)(\\s+\\S+){1,2}";
-        String reg = "#(添|加|\\+|添加)(题|新题)?";
-        String keyword = "选项1 啥东西";
-        System.out.println(keyword.matches(reg));
+        //String reg = "#(添|加|\\+|添加)(题|新题)?";
+        String reg = "([Nn][Ee][Ww]|[Aa][Dd][Dd])";
+        Scanner scan = new Scanner(System.in);
+        String[] arr = new String[]{"Nn","N","n","Ad","Na","nn","neWw"};
+        // new String[]{"New","NEw","NED","Aed","adD","Why","xsas","Newadd","newa","neW","ndd","Nadd"};
+        for(int i=0;i<arr.length;i++) {
+            String str = arr[i];
+            System.out.println(arr[i]+":"+str.matches(reg));
+        }
+        //String keyword = "选项1 啥东西";
+        //System.out.println(keyword.matches(reg));
 
     }
     @Test

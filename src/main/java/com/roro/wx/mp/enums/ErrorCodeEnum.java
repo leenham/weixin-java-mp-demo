@@ -31,14 +31,16 @@ public enum ErrorCodeEnum {
     CIPHER_UNKNOWN_ERROR(900199, "处理暗号图时未知异常"),
 
     /*处理答题报错*/
-    NO_QUIZ_FOUND(900201,"未找到匹配项,请尝试更换检索词"),
+    NO_QUIZ_FOUND(900201,"答题助手还在学习中,换个检索词试试吧"),
     QUIZ_ILLEGAL_UPDATE(900202,"更新题库时发生异常,请检查输入格式"),
     QUIZ_WRONG_LABEL(900203,"题目编号格式错误,请检查输入格式"),
-    QUIZ_UNEXIST_LABEL(900204,"当前编号不存在,请修改后重新输入"),
-    NO_RECENT_COMMIT_QUIZ(900205,"没能检测到最近检索的单条记录,不允许修改"),
+    QUIZ_UNEXIST_LABEL(900204,"臣妾找不到这一题啊"),
+    NO_RECENT_COMMIT_QUIZ(900205,"先得检索到单条记录，才能修改哈!"),
     QUIZ_WRONG_COMMAND(900206,"修改题目的指令格式异常"),
     QUIZ_WRONG_CHOICE(900207,"修改选项的指令格式异常"),
-    QUIZ_UNKNOWN_ERROR(900299,"答题助手发生未知异常"),
+    QUIZ_DELETE_ERROR(900208, "删除题库中题目时出错"),
+    KEYWORD_TOO_LONG(900209,"关键词也太长了,要不，换个短点儿的？"),
+    QUIZ_UNKNOWN_ERROR(900299,"答题助手...发生...未知...异常..@#$%$&^!"),
 
     PLACE_HOLDER(999999,"占位符");
     private int code;

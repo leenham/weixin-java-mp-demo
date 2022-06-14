@@ -32,11 +32,10 @@ public class Quiz {
         this.title = "";
         this.label = "#0000";
     }
-
+    //存储的时候用的格式
     public String toJsonString(){
         return JsonUtils.toJson(this);
     }
-
     //将quiz以便于阅读的形式输出
     public String toFormatString(){
         StringBuffer sb = new StringBuffer();
@@ -52,12 +51,24 @@ public class Quiz {
     //测试时用的输出格式
     public String toTestString(){
         StringBuffer sb = new StringBuffer();
-        sb.append(String.format("[%s]%04d. ",this.getTitle(),this.getIndex()));
-        sb.append(this.getBody());sb.append('\n');
+        sb.append(String.format("[%04d.%s] \n",this.getIndex(),this.getTitle()));
+        sb.append(">> "+this.getBody());sb.append('\n');
         List<Quiz.Option> optionList = this.getOptionList();
         for(int i=0;i<optionList.size();i++){
             Quiz.Option option = this.getOptionList().get(i);
-            sb.append('-'+option.getChoice()+' '+option.getResult()+'\n');
+            sb.append("> "+option.getChoice()+' '+option.getResult()+'\n');
+        }
+        return sb.toString();
+    }
+    //打印成方便转化为excel的格式
+    public String toExcelString(){
+        StringBuffer sb = new StringBuffer();
+        sb.append(String.format("%04d.%s\t",this.getIndex(),this.getTitle()));
+        sb.append(this.getBody());sb.append('\t');
+        List<Quiz.Option> optionList = this.getOptionList();
+        for(int i=0;i<optionList.size();i++){
+            Quiz.Option option = this.getOptionList().get(i);
+            sb.append(option.getChoice()+'\t'+option.getResult()+'\t');
         }
         return sb.toString();
     }
@@ -90,7 +101,7 @@ public class Quiz {
             this.getOptionList().add(new Option());
         }
         Quiz.Option option = optionList.get(idx);
-        if(content.equals("清空")){
+        if(content.equals("清空") || content.equals("删除")){
             this.clearOption(idx);
             return;
         }else if(content.equals("广告")){
