@@ -1,12 +1,14 @@
 package com.roro.wx.mp.handler;
 
 import com.roro.wx.mp.Service.CipherService;
+import com.roro.wx.mp.Service.DailyQuizService;
 import com.roro.wx.mp.Service.QuizService;
 import com.roro.wx.mp.Service.UserService;
 import com.roro.wx.mp.builder.TextBuilder;
 import com.roro.wx.mp.enums.ErrorCodeEnum;
 import com.roro.wx.mp.enums.MpException;
 import com.roro.wx.mp.object.Cipher;
+import com.roro.wx.mp.object.DailyQuiz;
 import com.roro.wx.mp.object.User;
 
 import com.roro.wx.mp.utils.AuthUtils;
@@ -42,6 +44,9 @@ public class MsgHandler extends AbstractHandler {
     CipherService cipherService;
     @Autowired
     QuizService quizService;
+    @Autowired
+    DailyQuizService dailyQuizService;
+
     @Value("${roconfig.appId}")
     String roAppId;
 
@@ -85,6 +90,7 @@ public class MsgHandler extends AbstractHandler {
     private String handleText(User user,WxMpXmlMessage wxMessage){
         String keyword = wxMessage.getContent().trim();//去除首尾的空格
         try{
+            this.logger.info(String.format("[TEXT]%s_%s",user.getKey(),keyword));
             return handleSpecialCommand(user,keyword);
         }catch(MpException e){
             //说明未能处理该消息,应该交给之后的其他功能去处理,否则就向外抛
@@ -93,18 +99,17 @@ public class MsgHandler extends AbstractHandler {
             }
         }
         String reply = "";
-        //否则当做答题检索功能处理.
-        //reply = quizService.retrieval(user,keyword);
-        /*活动下线,不再处理检索相关功能;仅第一次输入通知活动下线,之后不再提醒.
-        * 已将数据库中当前所有用户的status刷为1,新用户默认status是0
-        * 只有当前数据库中的用户会受到活动下线提示.
-        * */
-        LocalDateTime now = LocalDateTime.now();
+        //默认当做每日答题检索功能处理.
+        reply = dailyQuizService.retrieval(user,keyword);
+
+        //活动期间可以考虑对Q123格式的查询,返回每日答题结果;而其他格式,则不调用dailyquizService,单独调用quizService
+
+        /*LocalDateTime now = LocalDateTime.now();
         if(AuthUtils.isRoot(user) || now.getMonth().compareTo(Month.MAY)>0){
             reply = quizService.retrieval(user,keyword);
         }else{
             reply = "";//自动接入的闲聊系统会再回复,此处不要回复即可.
-        }
+        }*/
         return reply;
     }
     //处理一些特殊的指令
@@ -122,6 +127,7 @@ public class MsgHandler extends AbstractHandler {
             userService.init();
             cipherService.init();
             quizService.init();
+            dailyQuizService.init();
             return "刷新成功";
         }
         //"授权 appID ID authCode" 给指定用户赋予管理员权限,该权限可用于提交在线修改指令
@@ -172,8 +178,8 @@ public class MsgHandler extends AbstractHandler {
         //默认会报未处理该消息的异常
         throw new MpException(ErrorCodeEnum.UNHANDLED);
     }
-    //处理图片类的消息
 
+    //处理图片类的消息
     private String handleImage(User user,WxMpXmlMessage wxMessage){
         try {
             return handleImageAsCipher(user,wxMessage);

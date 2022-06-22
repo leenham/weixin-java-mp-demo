@@ -25,7 +25,7 @@ public class QuizService {
     @Value(value="${link.jump.yingxiongsha}")
     public String jumplink;
 
-    @Value(value="${roconfig.quiz.dragonboat}")
+    @Value(value="${roconfig.quiz.emptyDB}")
     public String quizDBKey;  //存储当前题库的哈希表所对应的键值
 
     @Autowired
@@ -52,8 +52,6 @@ public class QuizService {
             log.error("从Redis中读取答题活动题库时出错.");
         }
     }
-    //返回结果超过这个值,会导致响应过慢,而无法响应.已知7条时会不予响应.
-    public int MAX_RETURN_RESULT = 6;
 
     /**
      *
@@ -110,7 +108,7 @@ public class QuizService {
                 return q.toFormatString();
             }
             //修改题干/标题
-            if(keyword.matches("^(题干|标题|tg|bt)\\s+\\S+")){
+            if(keyword.matches("^(题干|标题|tg|bt|0|9)\\s+\\S+")){
                 if(!AuthUtils.isRoot(user.getAuthCode())) {
                     throw new MpException(ErrorCodeEnum.NO_AUTH);
                 }
@@ -119,7 +117,7 @@ public class QuizService {
                 if(splitArr[1].equals("清空")){
                     splitArr[1] = "";
                 }
-                if(splitArr[0].equals("题干") || splitArr[0].equals("tg")){
+                if(splitArr[0].equals("题干") || splitArr[0].equals("tg") || splitArr[0].equals("0")){
                     q.setBody(splitArr[1]);
                 }else{
                     q.setTitle(splitArr[1]);
@@ -192,6 +190,7 @@ public class QuizService {
         if(selected.size()>LIMITSIZE){
             sb.append(String.format("共检索到%d条记录,仅返回前%d条记录,若搜不到请更换关键词~\n",selected.size(),LIMITSIZE));
         }else if(selected.size()==0){
+            recentCommit.put(user.getKey(),null);
             return replyWhenNoFound(user,keyword);
         }
         if(selected.size()==1){

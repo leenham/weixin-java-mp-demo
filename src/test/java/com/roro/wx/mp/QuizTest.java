@@ -48,15 +48,15 @@ public class QuizTest {
         //User user = userMap.get("gh_e14b7dc2719doPTW659_noDaroyZ2M55UmkAt9n4");
         //System.out.println(JsonUtils.user2Json(user));
         User user;
-        for(String key:userMap.keySet()){
+        /*for(String key:userMap.keySet()){
             user = userMap.get(key);
             if(AuthUtils.isRoot(user)){
                 System.out.println(JsonUtils.user2Json(user));
             }
-        }
-//        user = userMap.get("gh_e14b7dc2719doPTW659_noDaroyZ2M55UmkAt9n4");
-//        user.setName("凌哲");
-//        userService.updateUser(user);
+        }*/
+        user = userMap.get("gh_e14b7dc2719doPTW658ZFaMB46IKzXPzx6PBmils");
+        user.setName("小尾巴");
+        userService.updateUser(user);
 //        user = userMap.get("gh_e14b7dc2719doPTW659mS4hTqy6bJHNUguA8VDgg");
 //        user.setName("电电");
 //        userService.updateUser(user);
@@ -163,7 +163,7 @@ public class QuizTest {
         Map<String,Quiz> map = quizService.getQuizMap();
         for(int i=1;i<map.keySet().size();i++){
             String key = String.format("#%04d",i);
-            System.out.println(map.get(key).toExcelString());
+            System.out.println(map.get(key).toJsonString());
         }
     }
 

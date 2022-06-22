@@ -40,6 +40,7 @@ public enum ErrorCodeEnum {
     QUIZ_WRONG_CHOICE(900207,"修改选项的指令格式异常"),
     QUIZ_DELETE_ERROR(900208, "删除题库中题目时出错"),
     KEYWORD_TOO_LONG(900209,"关键词也太长了,要不，换个短点儿的？"),
+    QUIZ_WRONG_INDEX(900210,"这个题目编号,我看不懂"),
     QUIZ_UNKNOWN_ERROR(900299,"答题助手...发生...未知...异常..@#$%$&^!"),
 
     PLACE_HOLDER(999999,"占位符");
