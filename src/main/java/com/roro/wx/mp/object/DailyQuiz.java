@@ -85,12 +85,22 @@ public class DailyQuiz {
             option.setChoice("");
             return;
         }else if(content.matches("^([Tt]rue|[Tt]|对|正确)$")) {
+            if(option.getChoice().equals("")){
+                //当选项为空时,先填入选项,然后才能添加答案;
+                option.setChoice(content);
+                return;
+            }
             option.setResult("true");
             for(int i=0;i<optionList.size();i++){
                 if(optionList.get(i).getResult().equals("") && i!=idx)
                     optionList.get(i).setResult("false");
             }
         }else if(content.matches("^([Ff]alse|[Ff]|错|错误)$")) {
+            if(option.getChoice().equals("")){
+                //当选项为空时,先填入选项,然后才能添加答案;
+                option.setChoice(content);
+                return;
+            }
             option.setResult("false");
         }else{
             option.setChoice(content);
