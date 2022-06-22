@@ -99,8 +99,12 @@ public class MsgHandler extends AbstractHandler {
             }
         }
         String reply = "";
-        //默认当做每日答题检索功能处理.
-        reply = dailyQuizService.retrieval(user,keyword);
+        //如果是Q格式的输入,默认当做每日答题检索
+        if(keyword.matches("^[Qq][1-9]{1,4}$")) {
+            reply = dailyQuizService.retrieval(user, keyword);
+        }else{
+            reply = "";
+        }
 
         //活动期间可以考虑对Q123格式的查询,返回每日答题结果;而其他格式,则不调用dailyquizService,单独调用quizService
 

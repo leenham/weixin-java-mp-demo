@@ -80,7 +80,7 @@ public class DailyQuizService{
                 return q.toFormatString();
             }
             //修改题干/标题
-            if(keyword.matches("^(题干|题目|提供|9|0)\\s+\\S+")){
+            if(keyword.matches("^(题干|题目|提供|提供者|9|0)\\s+\\S+")){
                 if(!AuthUtils.isRoot(user.getAuthCode())) {
                     throw new MpException(ErrorCodeEnum.NO_AUTH);
                 }
@@ -144,46 +144,23 @@ public class DailyQuizService{
             throw new MpException(ErrorCodeEnum.QUIZ_WRONG_COMMAND);
         }
 
-        //否则遍历题库,寻找匹配项
-        StringBuffer sb = new StringBuffer();
-        List<DailyQuiz> selected = new ArrayList<>();
-        for(String key:quizMap.keySet()){
-            DailyQuiz target = quizMap.get(key);
-            if(target.toJson().contains(keyword)){
-                selected.add(target);
-            }
+        if(keyword.charAt(0)=='q'){
+            keyword = keyword.replace('q','Q');
         }
-        if(selected.size()>LIMITSIZE){
-            sb.append(String.format("共检索到%d条记录,仅返回前%d条记录,若搜不到请更换关键词~\n",selected.size(),LIMITSIZE));
-        }else if(selected.size()==0){
-            if(keyword.matches("^[Qq][1-9]{1,4}$")){
-                if(keyword.charAt(0)=='q'){
-                    keyword = keyword.replace('q','Q');
-                }
-                if(quizMap.containsKey(keyword)){
-                    selected.add(quizMap.get(keyword));
-                }else {
-                    DailyQuiz q = new DailyQuiz();
-                    q.setLabel(keyword);
-                    addQuiz(q);
-                    selected.add(q);
-                }
-            }else {
-                recentCommit.put(user.getKey(),null);
-                return String.format("未能检索到结果,请更换关键词,或输入题目编号,如Q123");
-            }
-        }
-        if(selected.size()==1){
-            recentCommit.put(user.getKey(),selected.get(0));
+        if(quizMap.containsKey(keyword)){
+            DailyQuiz q = quizMap.get(keyword);
+            recentCommit.put(user.getKey(),q);
+            return q.toFormatString();
+        }else if(AuthUtils.isRoot(user)) {
+            DailyQuiz q = new DailyQuiz();
+            q.setLabel(keyword);
+            addQuiz(q);
+            recentCommit.put(user.getKey(),q);
+            return q.toFormatString();
         }else{
             recentCommit.put(user.getKey(),null);
+            return String.format("暂未收录%s,请在反馈群或者茶馆评论区反馈!",keyword);
         }
-        //包装返回结果
-        for(int i=0;i<Math.min(LIMITSIZE,selected.size());i++){
-            DailyQuiz qz = selected.get(i);
-            sb.append(qz.toFormatString());
-        }
-        return sb.toString();
     }
 
 
