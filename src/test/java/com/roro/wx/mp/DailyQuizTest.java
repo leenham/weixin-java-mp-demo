@@ -34,4 +34,20 @@ public class DailyQuizTest
         dailyQuizService.delQuiz(map.get("Q187"));
 
     }
+
+    @Test
+    public void printDailyQuizDB(){
+        int cnt = 0;
+        Map<String,DailyQuiz> map = dailyQuizService.getDailyQuizMap();
+        for(int i=1;i<1000;i++){
+            String label = String.format("Q%d",i);
+            if(map.containsKey(label)){
+                if(!map.get(label).getBody().equals("")) {
+                    System.out.println(map.get(label).toFormatString());
+                    cnt++;
+                }
+            }
+        }
+        System.out.println(String.format("当前共计录入%d道题",cnt));
+    }
 }

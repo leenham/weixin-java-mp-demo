@@ -61,7 +61,7 @@ public class DailyQuiz {
     }
 
     public Integer getIndex(){
-        if(this.label.matches("^[Qq][1-9]{1,4}$")){
+        if(this.label.matches("^[Qq][1-9][0-9]{0,3}$")){
             return Integer.valueOf(label.substring(1,label.length()));
         }else{
             return null;
@@ -80,27 +80,22 @@ public class DailyQuiz {
             this.getOptionList().add(new DailyQuiz.Option());
         }
         DailyQuiz.Option option = optionList.get(idx);
+        if(option.getChoice().equals("")){
+            //当选项为空时,先填入选项,然后才能添加答案;以避免指令歧义
+            option.setChoice(content);
+            return;
+        }
         if(content.equals("清空") || content.equals("删除")){
             option.setResult("");
             option.setChoice("");
             return;
         }else if(content.matches("^([Tt]rue|[Tt]|对|正确)$")) {
-            if(option.getChoice().equals("")){
-                //当选项为空时,先填入选项,然后才能添加答案;
-                option.setChoice(content);
-                return;
-            }
             option.setResult("true");
             for(int i=0;i<optionList.size();i++){
                 if(optionList.get(i).getResult().equals("") && i!=idx)
                     optionList.get(i).setResult("false");
             }
         }else if(content.matches("^([Ff]alse|[Ff]|错|错误)$")) {
-            if(option.getChoice().equals("")){
-                //当选项为空时,先填入选项,然后才能添加答案;
-                option.setChoice(content);
-                return;
-            }
             option.setResult("false");
         }else{
             option.setChoice(content);

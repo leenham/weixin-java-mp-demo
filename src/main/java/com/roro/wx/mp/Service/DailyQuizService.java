@@ -84,6 +84,9 @@ public class DailyQuizService{
                 if(!AuthUtils.isRoot(user.getAuthCode())) {
                     throw new MpException(ErrorCodeEnum.NO_AUTH);
                 }
+                if(!recentCommit.containsKey(user.getKey()) || recentCommit.get(user.getKey())==null){
+                    throw new MpException(ErrorCodeEnum.NO_RECENT_COMMIT_QUIZ);
+                }
                 String[] splitArr = keyword.split("\\s+");
                 DailyQuiz q = recentCommit.get(user.getKey());
                 if(splitArr[1].equals("清空")){
@@ -99,7 +102,7 @@ public class DailyQuizService{
                 return q.toFormatString();
             }
             //清空指定编号的题
-            if(keyword.matches("^((清空|删除)\\s+[Qq]?[0-9]{1,4})|([Qq]?[0-9]{1,4}\\s+(清空|删除))$")){
+            if(keyword.matches("^((清空|删除)\\s+[Qq]?[1-9][0-9]{0,3})|([Qq]?[1-9][0-9]{0,3}\\s+(清空|删除))$")){
                 if(!AuthUtils.isRoot(user.getAuthCode())) {
                     throw new MpException(ErrorCodeEnum.NO_AUTH);
                 }
@@ -107,7 +110,7 @@ public class DailyQuizService{
                 if(splitArr[1].equals("清空") || splitArr[1].equals("删除") ){
                     splitArr[1] = splitArr[0];
                 }
-                String label = 'Q'+splitArr[1];
+                String label = splitArr[1].replace('q','Q');
 
                 //即便不存在,也返回一个清空后的题目
                 DailyQuiz q = new DailyQuiz();
@@ -143,10 +146,10 @@ public class DailyQuizService{
         if(keyword.contains(" ")){
             throw new MpException(ErrorCodeEnum.QUIZ_WRONG_COMMAND);
         }
-
-        if(keyword.charAt(0)=='q'){
-            keyword = keyword.replace('q','Q');
+        if(!keyword.matches("^[Qq][1-9][0-9]{0,3}")){
+            return "";
         }
+        keyword = keyword.replace('q','Q');
         if(quizMap.containsKey(keyword)){
             DailyQuiz q = quizMap.get(keyword);
             recentCommit.put(user.getKey(),q);
