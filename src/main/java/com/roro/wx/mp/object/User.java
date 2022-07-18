@@ -11,6 +11,10 @@ import java.util.Date;
  */
 @Data
 public class User {
+    public final static int NAIVE = 0;
+    public final static int SUPERROOT = 1;
+    public final static int ROOT = 1<<1;
+    public final static int BLACKLIST = 1<<2;
     private String ID;    //每个用户,对于每个公众号(appID),会有唯一的openID
     private String appID; //因此appID + ID 可以锁定唯一的用户
     private String name;  //用户昵称
@@ -31,5 +35,31 @@ public class User {
         sb.append(String.format("app:%s\nid:%s\nauth:%x",appID,ID,authCode));
         return sb.toString();
     }
-
+    public boolean isRoot(){
+        return (authCode & ROOT)>0 || (authCode & SUPERROOT)>0;
+    }
+    public boolean isSuperRoot(){
+        return (authCode & SUPERROOT)>0;
+    }
+    public boolean inBlackList(){
+        return (authCode & BLACKLIST)>0;
+    }
+    public String getAuthDesc(){
+        StringBuilder sb = new StringBuilder();
+        if(isSuperRoot()){
+            sb.append("|超管");
+        }
+        if(isRoot()){
+            sb.append("|管理员");
+        }
+        if(inBlackList()){
+            sb.append("|黑名单");
+        }
+        if(!sb.equals("")){
+            sb.append("|");
+            return sb.toString();
+        }else {
+            return "普通用户";
+        }
+    }
 }

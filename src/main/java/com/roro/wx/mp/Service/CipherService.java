@@ -3,6 +3,7 @@ package com.roro.wx.mp.Service;
 
 import com.alibaba.fastjson.JSON;
 import com.roro.wx.mp.object.Cipher;
+import com.roro.wx.mp.object.Session;
 import com.roro.wx.mp.object.User;
 import com.roro.wx.mp.utils.*;
 import com.roro.wx.mp.enums.ErrorCodeEnum;
@@ -54,7 +55,6 @@ public class CipherService {
     private int threshold;
 
     HashMap<String,Cipher> cipherTable;
-    HashMap<String,Cipher> commitTable;
 
     @Autowired
     RedisUtils redisUtils;
@@ -62,7 +62,6 @@ public class CipherService {
     @PostConstruct
     public void init(){
         cipherTable = new HashMap<>();
-        commitTable = new HashMap<>();
         threshold = Integer.valueOf(thresholdStr);
         try{
             Set<Object> keyset = redisUtils.hkeys(cipherTableKey);
@@ -131,10 +130,12 @@ public class CipherService {
     /**
      * 根据提供的cipher特征，检索取回结果; 无论是否检索得到，都将其记录为该用户最近提交
      * 检索时需提供用户信息，用于记录其检索行为，等用户输入答案时有用。
-     * @param cipher
+     * @param ss
      * @return
      */
-    public String retrieval(User user, Cipher cipher)throws MpException{
+    public String retrieval(Session ss)throws MpException{
+        Cipher cipher = this.url2Cipher(ss.getMsg());
+        User user = ss.getUser();
         try {
             String answer = "";
             int[] target = cipher.getFeature();
@@ -153,7 +154,7 @@ public class CipherService {
                 answer = key;
                 break OUTER;
             }
-            commitTable.put(user.getKey(),cipher);
+            ss.setRecentCipher(cipher);
             if(!AuthUtils.isSuperRoot(user.getAuthCode()) && answer.matches(".*[0-9]")){
                 //如果以0-9数字结尾,则视作备选答案,以增加命中概率,但是需要把末位数字对外隐藏
                 //故在输出之前做处理. 超管可以直接看到原答案,以便在出错时进行覆盖处理
@@ -161,7 +162,7 @@ public class CipherService {
             }
             return answer;
         }catch (Exception e){
-            commitTable.put(user.getKey(),null);
+            ss.setRecentCipher(null);
             throw new MpException(ErrorCodeEnum.CIPHER_RETRIVAL_ERROR);
         }
     }
@@ -169,24 +170,15 @@ public class CipherService {
     /**
      * 获取user最近一次提交的暗号图，
      * 每次查询/更新,都会更新提交表（hash表，key为appID+ID,value为cipher
-     * @param user
+     * @param ss
      * @return
      */
-    public Cipher getRecentCommit(User user){
-        Date now = DateUtils.now();
-        String key = user.getKey();
-        if(commitTable.containsKey(key)){
-            Cipher ret =  commitTable.get(key);
-            if(ret==null)
-                throw new MpException(ErrorCodeEnum.RECENT_CIPHER_ERROR);
-            return ret;
-        }else{
+    public Cipher getRecentCommit(Session ss){
+        if(ss.getRecentCipher()==null)
             throw new MpException(ErrorCodeEnum.NO_COMMIT_CIPHER);
-        }
+        return ss.getRecentCipher();
     }
-    public void clearRecentCommit(User user){
-        commitTable.put(user.getKey(),null);
-    }
+
     public HashMap<String,Cipher> getCipherTable(){
         return this.cipherTable;
     }

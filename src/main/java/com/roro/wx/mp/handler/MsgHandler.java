@@ -7,9 +7,7 @@ import com.roro.wx.mp.Service.UserService;
 import com.roro.wx.mp.builder.TextBuilder;
 import com.roro.wx.mp.enums.ErrorCodeEnum;
 import com.roro.wx.mp.enums.MpException;
-import com.roro.wx.mp.object.Cipher;
-import com.roro.wx.mp.object.DailyQuiz;
-import com.roro.wx.mp.object.User;
+import com.roro.wx.mp.object.*;
 
 import com.roro.wx.mp.utils.AuthUtils;
 import com.roro.wx.mp.utils.ImageUtils;
@@ -22,12 +20,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.awt.image.BufferedImage;
-import java.net.URL;
-import java.time.LocalDateTime;
-import java.time.Month;
+
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 
 import static me.chanjar.weixin.common.api.WxConsts.XmlMsgType;
@@ -50,6 +46,8 @@ public class MsgHandler extends AbstractHandler {
     @Value("${roconfig.appId}")
     String roAppId;
 
+    Map<String, Session> sessionMap = new HashMap<>();
+
     @Override
     public WxMpXmlOutMessage handle(WxMpXmlMessage wxMessage,
                                     Map<String, Object> context, WxMpService weixinService,
@@ -63,15 +61,24 @@ public class MsgHandler extends AbstractHandler {
         String reply = "";
         try{
             User user = userService.getUser(wxMessage.getToUser(),wxMessage.getFromUser());
-            if(AuthUtils.isBlackList(user.getAuthCode())){
+            Session session = sessionMap.getOrDefault(user.getKey(),new Session(user));
+
+            if(user.inBlackList()){
                 //拒绝让黑名单用户访问
                 throw new MpException(ErrorCodeEnum.DENY_BLACKLIST_USER);
             }
             if(msgType.equals("text")){
-                reply = handleText(user,wxMessage);
+                session.setMsg(wxMessage.getContent());
+                reply = handleText(session);
             }else if(msgType.equals("image")){
-                reply = handleImage(user,wxMessage);
-            }
+                //对于图片格式的输入,关键信息在于getPicUrl()
+                session.setMsg(wxMessage.getPicUrl());
+                reply = handleImage(session);
+            }else{}
+
+            session.setNow();
+            sessionMap.put(session.getKey(),session);
+
             if(reply.equals("")){
                 //此处返回值为null,在上层代码会进行判断,并最终返回空字符串(即不做任何回复
                 //如果直接返回content为""的结果,公众号会显示故障.
@@ -87,29 +94,30 @@ public class MsgHandler extends AbstractHandler {
     }
 
     //处理文本类的消息
-    private String handleText(User user,WxMpXmlMessage wxMessage){
-        String keyword = wxMessage.getContent().trim();//去除首尾的空格
-        try{
-            this.logger.info(String.format("[TEXT]%s_%s",user.getKey(),keyword));
-            return handleSpecialCommand(user,keyword);
-        }catch(MpException e){
-            //说明未能处理该消息,应该交给之后的其他功能去处理,否则就向外抛
-            if(e.getErrorCode()!=ErrorCodeEnum.UNHANDLED.getCode()){
-                throw e;//如果已经受理但是还是报错,那么就把这个错误向外抛.
-            }
-        }
-        String reply = "";
-        //如果是Q格式的输入,默认当做每日答题检索
-        reply = dailyQuizService.retrieval(user, keyword);
-        if(reply.equals("")){
-            //说明没被每日答题检索
-            return "";
-        }else{
+    private String handleText(Session ss){
+        String keyword = ss.getMsg().trim();//去除首尾的空格
+        User user = ss.getUser();
+        String reply = handleSpecialCommand(ss);
+        if(reply!=null && !reply.equals("")) {
+            //如果指令被受理,直接返回指令结果.
             return reply;
         }
-
+        try {
+            reply = dailyQuizService.retrieval(ss);
+            if(reply!=null && !reply.equals("")) {
+                return reply;
+            }
+        }catch(MpException me){
+            if(me.getErrorCode()==ErrorCodeEnum.UNHANDLED.getCode() || me.getErrorCode()==ErrorCodeEnum.NO_RECENT_COMMIT_QUIZ.getCode()){
+                //表示每日答题没有捕获该指令,属于预料中的报错
+            }else{
+                throw me; //意料之外的错误继续向上抛
+            }
+        }
+        //否则交给活动答题去检索.
+        reply = quizService.retrieval(ss);
+        return reply;
         //活动期间可以考虑对Q123格式的查询,返回每日答题结果;而其他格式,则不调用dailyquizService,单独调用quizService
-
         /*LocalDateTime now = LocalDateTime.now();
         if(AuthUtils.isRoot(user) || now.getMonth().compareTo(Month.MAY)>0){
             reply = quizService.retrieval(user,keyword);
@@ -118,52 +126,75 @@ public class MsgHandler extends AbstractHandler {
         }*/
         //return reply;
     }
-    //处理一些特殊的指令
-    private String handleSpecialCommand(User user,String keyword){
+    /**
+     * @desc 处理一些特殊的指令
+     * @return 返回空字符串表示没能处理，否则表示指令受理后的反馈
+     */
+    private String handleSpecialCommand(Session ss){
+        String keyword = ss.getMsg();
+        User user = ss.getUser();
+        //优先处理超级管理员(也就是我自己)的指令
+        if(user.isSuperRoot()){
+            if(keyword.equals("#刷新")){
+                if(!AuthUtils.isSuperRoot(user.getAuthCode())){
+                    throw new MpException(ErrorCodeEnum.NO_AUTH);
+                }
+                userService.init();
+                cipherService.init();
+                quizService.init();
+                dailyQuizService.init();
+                return "刷新成功";
+            }
+            //"授权 appID ID authCode" 给指定用户赋予管理员权限,该权限可用于提交在线修改指令
+            if(keyword.matches("^授权\\s+\\S+\\s+[0-9]+$")) {
+                String[] arr = keyword.split("\\s+");
+                String appID = roAppId;
+                String ID = arr[1];
+                int authCode = Integer.valueOf(arr[2]);
+                if (!userService.hasUser(appID, ID)) {
+                    throw new MpException(ErrorCodeEnum.USER_UNEXISTED);
+                } else {
+                    User target = userService.getUser(appID, ID);
+                    userService.authorize(target, authCode);
+                    return String.format("给ID:%s授权<%d>成功.", target.getID(), target.getAuthDesc());
+                }
+            }
+            if(keyword.matches("^活动答题\\s+\\S+$")){
+                String[] arr = keyword.split("\\s+");
+                if(arr[1].equals("开启") || arr[1].equals("开始")){
+                    quizService.activate();
+                    return "答题活动已开启";
+                }else if(arr[1].equals("关闭") || arr[1].equals("结束")){
+                    quizService.deactivate();
+                    return "答题活动已关闭";
+                }else if(arr[1].matches("[a-zA-z]+")){
+                    quizService.setQuizDBKey(arr[1]);
+                    return String.format("数据库主键已设置为%s,当前状态:%s,共有题目%d条",arr[1],quizService.isActive()?"开启":"关闭",quizService.getQuizMap().size());
+                }else{
+                    return "指令格式错误,活动答题主键应使用英文字母";
+                }
+            }
+            if(keyword.matches("显示跳转链接")){
+                quizService.showJumpLink();
+                return "已设置为显示跳转链接";
+            }
+            if(keyword.matches("隐藏跳转链接")){
+                quizService.hideJumpLink();
+                return "已设置为不显示跳转链接";
+            }
+        }
         /* 允许他们自行查看自己的appID和ID,这样方便我将他们和具体的人对应起来*/
         if(keyword.equals("#查看信息")){
             String authDesc = AuthUtils.getAuthDesc(user.getAuthCode());
             return String.format("appID:%s\nID:%s\nauthCode:%s",user.getAppID(),user.getID(),authDesc);
         }
-        /* 方便我在线将内存中的表和数据库进行同步*/
-        if(keyword.equals("#刷新")){
-            if(!AuthUtils.isSuperRoot(user.getAuthCode())){
-                throw new MpException(ErrorCodeEnum.NO_AUTH);
-            }
-            userService.init();
-            cipherService.init();
-            quizService.init();
-            dailyQuizService.init();
-            return "刷新成功";
-        }
-        //"授权 appID ID authCode" 给指定用户赋予管理员权限,该权限可用于提交在线修改指令
-        if(keyword.matches("^授权\\s+\\S+\\s+[0-9]+$")){
-            //只有超级管理员,也就是我自己才能随意赋权. 对于授权码的格式,就不做限制了,我自己知道怎么攻击自己(ૢ˃ꌂ˂ૢ)
-            if((user.getAuthCode() & AuthUtils.SUPERROOT)==0)
-                throw new MpException(ErrorCodeEnum.NO_AUTH);
-            try {
-                String[] arr = keyword.split("\\s+");
-                String appID = roAppId;
-                String ID = arr[1];
-                int authCode = Integer.valueOf(arr[2]);
-                if(!userService.hasUser(appID,ID)){
-                    throw new MpException(ErrorCodeEnum.USER_UNEXISTED);
-                }else{
-                    User target = userService.getUser(appID,ID);
-                    userService.authorize(target,authCode);
-                    return String.format("给ID:%s授权%d成功.",target.getID(),authCode);
-                }
-            }catch(MpException me){
-                throw me;
-            }
-            catch (Exception e){
-                throw new MpException(ErrorCodeEnum.SPECIAL_COMMAND_ERROR);
-            }
-        }
         //处理 答案:四字成语 格式的输入,视作更新暗号图的答案,管理员才能修改
         if(keyword.matches("答案[\\s,:.]+.*")){
-            if(!AuthUtils.isRoot(user.getAuthCode())) {
+            if(!user.isRoot()) {
                 throw new MpException(ErrorCodeEnum.NO_AUTH);
+            }
+            if(ss.getRecentCipher()==null){
+                throw new MpException(ErrorCodeEnum.NO_COMMIT_CIPHER);
             }
             String[] arr = keyword.split("[\\s,:.：]+",2);
             if(arr.length!=2 || arr[1].length()<2 || arr[1].length()>=6){
@@ -171,9 +202,9 @@ public class MsgHandler extends AbstractHandler {
             }
             String answer = arr[1];
             //读取该用户最近一次提交的暗号图，并更新暗号池
-            Cipher cipher = cipherService.getRecentCommit(user);
+            Cipher cipher = ss.getRecentCipher();
             cipherService.addCipherRecord(cipher,answer);
-            //更新的同时,将图片保存到服务器
+            //更新的同时,将图片下载保存到服务器
             try {
                 ImageUtils.write(ImageUtils.read(cipher.getUrl()),String.format("cipher/%s.jpg",answer));
             }catch(Exception e){
@@ -181,17 +212,28 @@ public class MsgHandler extends AbstractHandler {
             }
             return String.format("已成功更新暗号池：%s",answer);
         }
-        //默认会报未处理该消息的异常
-        throw new MpException(ErrorCodeEnum.UNHANDLED);
+        //处理添加新题目的请求
+        if(keyword.matches("^(添题|新题|加题|添加新题目|[Nn]ew|[Aa]dd)$")){
+            if(!user.isRoot()){
+                throw new MpException(ErrorCodeEnum.NO_AUTH);
+            }
+            Quiz q = new Quiz();
+            q.setLabel("#9999");
+            quizService.addQuiz(q);
+            ss.setRecentQuiz(q);//添加新题目时,默认将其作为最近一次提交,方便直接修改
+            return q.toFormatString();
+        }
+        return "";//返回空字符串表示没能处理。
     }
 
     //处理图片类的消息
-    private String handleImage(User user,WxMpXmlMessage wxMessage){
+    private String handleImage(Session session){
         try {
-            return handleImageAsCipher(user,wxMessage);
+            return handleImageAsCipher(session);
         }catch (MpException me){
             //提交图片过程中发生异常,则清空最近一次提交,防止用户无意间修改了答案
-            cipherService.clearRecentCommit(user);
+            session.setRecentCipher(null);
+            //cipherService.clearRecentCommit(user);
             if(me.getErrorCode()== ErrorCodeEnum.CIPHER_ILLEGAL_PIC.getCode() ||
                 me.getErrorCode()==ErrorCodeEnum.CIPHER_WITHOUT_QRCODE.getCode() ||
                 me.getErrorCode()==ErrorCodeEnum.CIPHER_WRONG_QRCODE.getCode()
@@ -206,9 +248,8 @@ public class MsgHandler extends AbstractHandler {
         /* TODO:其他处理图片输入的逻辑 */
     }
     //默认将图片消息当做暗号图处理.
-    private String handleImageAsCipher(User user,WxMpXmlMessage wxMessage) {
-        Cipher c = cipherService.url2Cipher(wxMessage.getPicUrl());
-        String result = cipherService.retrieval(user,c);
+    private String handleImageAsCipher(Session session) {
+        String result = cipherService.retrieval(session);
         if(result==null || result.equals("")){
             //表示无法检索到暗号图
             return "当前暗号池暂未收录该暗号图!";

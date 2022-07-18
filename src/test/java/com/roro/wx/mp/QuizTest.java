@@ -103,7 +103,8 @@ public class QuizTest {
 
     @Test
     public void myTest2(){
-
+        String str = "";
+        System.out.println("hello,world!\n"+str);
     }
 
     @Test

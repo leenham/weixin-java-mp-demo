@@ -4,6 +4,7 @@ import com.roro.wx.mp.enums.ErrorCodeEnum;
 import com.roro.wx.mp.enums.MpException;
 import com.roro.wx.mp.object.Cipher;
 import com.roro.wx.mp.object.Quiz;
+import com.roro.wx.mp.object.Session;
 import com.roro.wx.mp.object.User;
 import com.roro.wx.mp.utils.AuthUtils;
 import com.roro.wx.mp.utils.JsonUtils;
@@ -25,8 +26,11 @@ public class QuizService {
     @Value(value="${link.jump.yingxiongsha}")
     public String jumplink;
 
-    @Value(value="${roconfig.quiz.emptyDB}")
+    //@Value(value="${roconfig.quiz.emptyDB}")
     public String quizDBKey;  //存储当前题库的哈希表所对应的键值
+
+    @Value(value="${roconfig.quiz.configKey}")
+    public String configKey;
 
     @Autowired
     RedisUtils redisUtils;
@@ -36,64 +40,100 @@ public class QuizService {
 
     int LIMITSIZE = 5;
     Map<String,Quiz> quizMap;  //题库在内存中的备份,每次部署会从数据库中读取.
-    Map<String,Quiz> recentCommit; //用来记录用户最近的一次提交,用于识别他们修改的对象,就不写入数据库了
+    class QuizServiceConfig{
+        public boolean isActive; //活动是否
+        public boolean hasJumpLink; // 是否添加跳转链接？
+        public String quizDBKey; //活动题库对应的键.
+        List<String> autoReply;
+
+
+        public QuizServiceConfig(){
+            this.isActive = true;
+            this.hasJumpLink = true;
+            this.quizDBKey = "emptyDB";
+            this.autoReply = new ArrayList<>();
+        }
+    }
+    public QuizServiceConfig config;
+
     @PostConstruct
     public void init(){
         quizMap = new HashMap<>();
-        recentCommit = new HashMap<>();
-        try{
+        Object obj= redisUtils.get(configKey);
+        if(obj==null)
+            config = new QuizServiceConfig();
+        else
+            config = (QuizServiceConfig)JsonUtils.fromJson((String)obj,QuizServiceConfig.class);
+        this.quizDBKey = config.quizDBKey;
+        try {
             Set<Object> keyset = redisUtils.hkeys(quizDBKey);
-            for(Object key:keyset){
-                String quizText = (String)(redisUtils.hget(quizDBKey,key));
-                quizMap.put((String)key,JsonUtils.json2Quiz(quizText));
+            for (Object key : keyset) {
+                String quizText = (String) (redisUtils.hget(quizDBKey, key));
+                quizMap.put((String) key, JsonUtils.json2Quiz(quizText));
             }
-            return;
-        }catch(Exception e){
-            log.error("从Redis中读取答题活动题库时出错.");
+        }catch(Exception e) {
+            log.error("不存在的题库键值%s".format(quizDBKey));
         }
+
     }
 
+    public boolean setQuizDBKey(String dbkey){
+        config.quizDBKey = dbkey;
+        saveConfig();
+        init();
+        return true;
+    }
+    public void activate(){
+        if(!config.isActive) {
+            config.isActive = true;
+            saveConfig();
+        }
+    }
+    public void deactivate(){
+        if(config.isActive){
+            config.isActive = false;
+            saveConfig();
+        }
+    }
+    public boolean isActive(){
+        return config.isActive;
+    }
+    public void showJumpLink(){
+        config.hasJumpLink = true;
+    }
+    public void hideJumpLink(){
+        config.hasJumpLink = false;
+    }
     /**
      *
-     * @param user   发起查询的用户
-     * @param keyword  发起查询使用的关键词
+     * @param ss
      * @return
      * 用来 检索 / 修改 /更新 / 添加 题目
      * 用户信息主要用来记录并判断是否有权限能够修改题目
      */
-    public String retrieval(User user, String keyword){
-        /* 优先处理修改指令的请求 */
-        try{
-            //处理添加新题目的请求
-            if(keyword.matches("^(添题|新题|加题|添加新题目|[Nn]ew|[Aa]dd)$")){
-                if(!AuthUtils.isRoot(user.getAuthCode())){
-                    throw new MpException(ErrorCodeEnum.NO_AUTH);
-                }
-                //优先寻找题库中有没有没任何内容的编号,给其分配旧的标签
-                /*for(String key:quizMap.keySet()){
-                    Quiz quiz = quizMap.get(key);
-                    if(quiz.getBody().equals("") && quiz.getTitle().equals("") && quiz.getOptionList().size()==0){
-                        recentCommit.put(user.getKey(),quiz);//添加新题目时,默认将其作为最近一次提交,方便直接修改
-                        return quiz.toFormatString();
-                    }
-                }*/
-                Quiz q = new Quiz();
-                q.setLabel("#9999");
-                addQuiz(q);
-                recentCommit.put(user.getKey(),q);//添加新题目时,默认将其作为最近一次提交,方便直接修改
-                return q.toFormatString();
+    public String retrieval(Session ss){
+        if(!this.isActive()){
+            return "";
+        }
+        String keyword = ss.getMsg();
+        User user = ss.getUser();
+        //通过是否包含空格来区分是否是指令,(TODO : 判断逻辑待修改).
+        if(keyword.contains(" ")){
+            //权限控制
+            if(!user.isRoot()) {
+                throw new MpException(ErrorCodeEnum.NO_AUTH);
             }
+            //如果找不到最近一次提交的结果,则直接驳回.(过期视作不存在)
+            if(ss.getRecentQuiz()==null){
+                throw new MpException(ErrorCodeEnum.NO_RECENT_COMMIT_QUIZ);
+            }
+
             //修改/更新/添加 选项
             if(keyword.matches("^(选项)?(1|2|3|4|5|一|二|三|四|五)(\\s+\\S+){1,2}")){
-                if(!AuthUtils.isRoot(user.getAuthCode())) {
-                    throw new MpException(ErrorCodeEnum.NO_AUTH);
-                }
-                if(!recentCommit.containsKey(user.getKey()) || recentCommit.get(user.getKey())==null){
-                    throw new MpException(ErrorCodeEnum.NO_RECENT_COMMIT_QUIZ);
-                }
+
                 String[] splitArr = keyword.split("\\s+");
                 int choiceIdx = getOptionNumberInCommand(splitArr[0]);
-                Quiz q = recentCommit.get(user.getKey());
+                Quiz q = ss.getRecentQuiz();
                 if(splitArr.length==2){
                     //选项一 内容 ==> 如果对应的选项为空,则覆盖选项;否则,给该选项添加新结果
                     q.setOption(choiceIdx,splitArr[1]);
@@ -103,17 +143,14 @@ public class QuizService {
                 }else{
                     throw new MpException(ErrorCodeEnum.QUIZ_WRONG_COMMAND);
                 }
-                recentCommit.put(user.getKey(),q);//将更新后的quiz提交并更新
+                ss.setRecentQuiz(q);//将更新后的quiz提交并更新
                 addQuiz(q);
                 return q.toFormatString();
             }
             //修改题干/标题
             if(keyword.matches("^(题干|标题|tg|bt|0|9)\\s+\\S+")){
-                if(!AuthUtils.isRoot(user.getAuthCode())) {
-                    throw new MpException(ErrorCodeEnum.NO_AUTH);
-                }
                 String[] splitArr = keyword.split("\\s+");
-                Quiz q = recentCommit.get(user.getKey());
+                Quiz q = ss.getRecentQuiz();
                 if(splitArr[1].equals("清空")){
                     splitArr[1] = "";
                 }
@@ -122,15 +159,12 @@ public class QuizService {
                 }else{
                     q.setTitle(splitArr[1]);
                 }
-                recentCommit.put(user.getKey(),q);//将更新后的quiz提交并更新
+                ss.setRecentQuiz(q);//将更新后的quiz提交并更新
                 addQuiz(q);
                 return q.toFormatString();
             }
             //清空指定编号的题
             if(keyword.matches("^((清空|删除)\\s+[0-9]{4})|([0-9]{4}\\s+(清空|删除))$")){
-                if(!AuthUtils.isRoot(user.getAuthCode())) {
-                    throw new MpException(ErrorCodeEnum.NO_AUTH);
-                }
                 String[] splitArr = keyword.split("\\s+");
                 if(splitArr[1].equals("清空") || splitArr[1].equals("删除") ){
                     splitArr[1] = splitArr[0];
@@ -139,7 +173,7 @@ public class QuizService {
                 if(quizMap.containsKey(label)){
                     Quiz q = new Quiz();
                     q.setLabel(label);
-                    recentCommit.put(user.getKey(),q);
+                    ss.setRecentQuiz(q);
                     addQuiz(q);
                     return q.toFormatString();
                 }else{
@@ -148,31 +182,23 @@ public class QuizService {
             }
             //给指定选项 清空 或者 添加广告标志
             if(keyword.matches("^(清空|删除|广告)\\s+(1|2|3|4|5|一|二|三|四|五)$")){
-                if(!AuthUtils.isRoot(user.getAuthCode())) {
-                    throw new MpException(ErrorCodeEnum.NO_AUTH);
-                }
-                if(!recentCommit.containsKey(user.getKey()) || recentCommit.get(user.getKey())==null){
-                    throw new MpException(ErrorCodeEnum.NO_RECENT_COMMIT_QUIZ);
-                }
                 String[] splitArr = keyword.split("\\s+");
                 int choiceIdx = getOptionNumberInCommand(splitArr[1]);
-                Quiz q = recentCommit.get(user.getKey());
+                Quiz q = ss.getRecentQuiz();
                 q.setOption(choiceIdx,splitArr[0]);
-                recentCommit.put(user.getKey(),q);//将更新后的quiz提交并更新
+                ss.setRecentQuiz(q);//将更新后的quiz提交并更新
                 addQuiz(q);
                 return q.toFormatString();
             }
-            throw new MpException(ErrorCodeEnum.UNHANDLED);
-        }catch(MpException me){
-            //指令没有处理的，则顺序往下执行。否则向上抛出。
-            if(me.getErrorCode()!=ErrorCodeEnum.UNHANDLED.getCode()){
-                throw me;
+            //添加随机回复 TODO: 删除回复的功能
+            if(keyword.matches("^(回复)\\s+\\S$")){
+                String[] splitArr = keyword.split("\\s+");
+                config.autoReply.add(splitArr[1]);
+                saveConfig();
             }
+            throw new MpException(ErrorCodeEnum.UNHANDLED);
         }
-        //如果输入中间带空格，会被视作指令异常
-        if(keyword.contains(" ")){
-            throw new MpException(ErrorCodeEnum.QUIZ_WRONG_COMMAND);
-        }
+
         //否则遍历题库,寻找匹配项
         StringBuffer sb = new StringBuffer();
         List<Quiz> selected = new ArrayList<>();
@@ -190,20 +216,21 @@ public class QuizService {
         if(selected.size()>LIMITSIZE){
             sb.append(String.format("共检索到%d条记录,仅返回前%d条记录,若搜不到请更换关键词~\n",selected.size(),LIMITSIZE));
         }else if(selected.size()==0){
-            recentCommit.put(user.getKey(),null);
+            ss.setRecentQuiz(null);
             return replyWhenNoFound(user,keyword);
         }
         if(selected.size()==1){
-            recentCommit.put(user.getKey(),selected.get(0));
+            ss.setRecentQuiz(selected.get(0));
         }else{
-            recentCommit.put(user.getKey(),null);
+            ss.setRecentQuiz(null);
         }
         //包装返回结果
         for(int i=0;i<Math.min(LIMITSIZE,selected.size());i++){
             Quiz qz = selected.get(i);
             sb.append(qz.toFormatString());
         }
-        sb.append(jumplink);//最后添加跳转回游戏的链接
+        if(config.hasJumpLink)
+            sb.append(jumplink);//最后添加跳转回游戏的链接
         return sb.toString();
     }
 
@@ -211,43 +238,16 @@ public class QuizService {
     public String replyWhenNoFound(User user,String keyword){
         String name = user.getName();
         Random r = new Random();
-        if(name==null || name.equals("")){
-            if(keyword.length()>=7){
-                String[] reply_arr = new String[]{
-                    "简单点，搜索的方式再短点~",
-                    "关键词太长了，唉呀妈呀脑瓜疼！"
-                };
-                return reply_arr[r.nextInt(reply_arr.length)];
-            }else{
-                String[] reply_arr = new String[]{
-                    "臣妾搜不到啊!",
-                    "这道题，我不会做!",
-                    "这可真是难为小生了，可否换个关键词。",
-                    "为妾不懂，官人再换个关键词吧~",
-                    "唉呀妈呀脑瓜疼!",
-                    "这题不会，另请高明吧!",
-                    "别闹，这个词搜不到",
-                    "对方答不上来并向你请求换个词",
-                    "对方已放弃思考，不换个词回复不了",
-                    "搜索失败，大侠换个关键词重新来过",
-                };
-                return reply_arr[r.nextInt(reply_arr.length)];
-            }
-        }else {
-            String[] reply_arr = new String[]{
-                "搜不到，%s。别问了，再问自杀。",
-                "%s,你已经是个成熟的管理员了，你应该学会自己换关键词了！",
-                "%s,你老让我搜不到，这让我很难办啊！",
-                "%s,臣妾搜不到啊!",
-                "%s,这道题，我不会做！不！会！做！",
-                "为妾不懂，%s大官人，再换个关键词吧~",
-                "唉呀妈呀，%s,我脑瓜疼!",
-                "别闹了，%s，这个词搜不到",
-                "%s,能不能不要皮？"
-            };
-            return String.format(reply_arr[r.nextInt(reply_arr.length)],name);
+        List<String> replylist = config.autoReply;
+        if(replylist==null)
+            replylist = new ArrayList<>();
+        if(replylist.size()==0)
+            replylist.add("找不到匹配的题目,请尝试换个检索词吧~");
+        String reply = replylist.get(r.nextInt(replylist.size()));
+        if(user.getName()!=null && !user.getName().equals("")){
+            reply = user.getName()+','+reply;
         }
-
+        return reply;
     }
 
     //添加一个新的quiz.如果quiz的标签过大,则将其修正到quizMap.size()大小
@@ -285,5 +285,10 @@ public class QuizService {
         if(ch=='四' || ch=='4')return 3;
         if(ch=='五' || ch=='5')return 4;
         throw new MpException(ErrorCodeEnum.QUIZ_WRONG_COMMAND);
+    }
+
+
+    public void saveConfig(){
+        redisUtils.set(configKey,JsonUtils.toJson(config));
     }
 }

@@ -24,6 +24,7 @@ public class Quiz {
     String body;      //题干
     String label;    //题目编号/标签
     String title;    //小标题
+    String recorder;       //题目的记录者
     List<Option> optionList;
 
     public Quiz(){
@@ -31,6 +32,7 @@ public class Quiz {
         this.body = "";
         this.title = "";
         this.label = "#0000";
+        this.recorder = "";
     }
     //存储的时候用的格式
     public String toJsonString(){

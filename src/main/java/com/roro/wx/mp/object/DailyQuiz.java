@@ -24,12 +24,14 @@ public class DailyQuiz {
     String body;      //题干
     String label;    //题目编号/标签
     String provider; //本题由谁谁谁提供
+    String recorder; //题目的记录者的key
     List<DailyQuiz.Option> optionList;
     public DailyQuiz(){
         this.optionList = new ArrayList<>();
         this.body = "";
         this.provider = "";
         this.label = "";
+        this.recorder = "";
     }
     public void setLabel(Integer idx){
         if(idx!=null){
