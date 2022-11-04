@@ -7,3 +7,4 @@ application.yml
 *.iml
 /ngrok/
 /cipher/
+/test/

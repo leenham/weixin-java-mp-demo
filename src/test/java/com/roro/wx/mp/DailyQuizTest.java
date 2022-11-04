@@ -29,9 +29,9 @@ public class DailyQuizTest
             System.out.println(map.get(key).toFormatString());
 
         }
-        dailyQuizService.delQuiz(map.get("Q414"));
-        dailyQuizService.delQuiz(map.get("q414"));
-        dailyQuizService.delQuiz(map.get("Q187"));
+        //dailyQuizService.delQuiz(map.get("Q414"));
+        //dailyQuizService.delQuiz(map.get("q414"));
+        //dailyQuizService.delQuiz(map.get("Q187"));
 
     }
 

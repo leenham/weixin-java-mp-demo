@@ -10,14 +10,14 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
-import javax.jws.Oneway;
 import java.net.UnknownHostException;
+
 
 @Configuration
 public class RedisConfig2 {
     @Bean
     public RedisTemplate<String,Object> redisTemplate(RedisConnectionFactory redisConnectionFactory)
-        throws UnknownHostException{
+        throws UnknownHostException {
         RedisTemplate<String,Object> template = new RedisTemplate<>();
         Jackson2JsonRedisSerializer<Object> jackson2JsonRedisSerializer = new Jackson2JsonRedisSerializer<Object>(Object.class);
         ObjectMapper om = new ObjectMapper();

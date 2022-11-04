@@ -11,6 +11,7 @@ public class GrammerTest {
     public void test(){
         String keyword1 = "授权 gh_e14b7dc2719d oPTW655tUQjQik_am-J4SUwMCAWc";
         System.out.println(keyword1.matches("^授权 \\S* \\S*$"));
+        System.out.println(keyword1);
     }
     @Test
     public void regTest(){
